@@ -1,0 +1,66 @@
+from flask import jsonify
+from flask_login import current_user
+from flask_restful import abort, Resource
+from data.users import User
+from data import db_session
+from flask_restful import reqparse
+from data.dialogues import Dialogue
+
+parser = reqparse.RequestParser()
+parser.add_argument('name', required=True)
+parser.add_argument('members_ids', required=True)
+
+
+def abort_if_dialogue_not_found(dialogue_id):
+    session = db_session.create_session()
+    dialogue = session.query(Dialogue).get(dialogue_id)
+    if not dialogue:
+        abort(404, message=f"Dialogue {dialogue_id} not found")
+
+
+def abort_if_user_not_found(user_id):
+    session = db_session.create_session()
+    user = session.query(User).get(user_id)
+    if not user:
+        abort(404, message=f"User {user_id} not found")
+
+
+class DialoguesResource(Resource):
+    def get(self, dialogue_id):
+        abort_if_dialogue_not_found(dialogue_id)
+        session = db_session.create_session()
+        dialogue = session.query(Dialogue).get(dialogue_id)
+        return jsonify({'dialogue': dialogue.to_dict()})
+
+    def delete(self, dialogue_id):
+        abort_if_dialogue_not_found(dialogue_id)
+        session = db_session.create_session()
+        dialogue = session.query(Dialogue).get(dialogue_id)
+        session.delete(dialogue)
+        session.commit()
+        return jsonify({'success': 'OK'})
+
+
+class DialoguesListResource(Resource):
+    def get(self):
+        session = db_session.create_session()
+        dialogues = session.query(Dialogue).all()
+        return jsonify({'dialogues': [item.to_dict() for item in dialogues]})
+
+    def post(self):
+        args = parser.parse_args()
+        session = db_session.create_session()
+        # noinspection PyArgumentList
+        dialogue = Dialogue(
+            name=args['name']
+        )
+        current_user.dialogues.append(dialogue)
+        session.merge(current_user)
+        for user_id in args['member_ids']:
+            abort_if_user_not_found(user_id)
+            user = session.query(User).get(user_id)
+            user.dialogues.append(dialogue)
+            session.merge(user)
+        session.add(dialogue)
+        session.commit()
+        return jsonify({'success': 'OK'})
