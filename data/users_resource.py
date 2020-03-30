@@ -1,3 +1,4 @@
+# Импорты необходимых библиотек, классов и функций
 from flask import jsonify
 from flask_restful import abort, Resource
 from data import db_session
@@ -18,6 +19,13 @@ def abort_if_user_not_found(user_id):
     user = session.query(User).get(user_id)
     if not user:
         abort(404, message=f"User {user_id} not found")
+
+
+def abort_if_user_already_exists(user_login):
+    session = db_session.create_session()
+    user = session.query(User).filter(User.login == user_login).first()
+    if user:
+        abort(404, message=f"User with login='{user_login}' already exists")
 
 
 class UsersResource(Resource):
@@ -44,6 +52,7 @@ class UsersListResource(Resource):
 
     def post(self):
         args = parser.parse_args()
+        abort_if_user_already_exists(args['login'])
         session = db_session.create_session()
         # noinspection PyArgumentList
         user = User(

@@ -1,7 +1,8 @@
+# Импорты необходимых библиотек, классов и функций
+from datetime import datetime
 from flask import jsonify
 from flask_login import current_user
 from flask_restful import abort, Resource
-
 from data.dialogues import Dialogue
 from data import db_session
 from flask_restful import reqparse
@@ -9,6 +10,7 @@ from data.messages import Message
 
 parser = reqparse.RequestParser()
 parser.add_argument('text', required=True)
+parser.add_argument('date', type=datetime)
 parser.add_argument('user_id', type=int, required=True)
 parser.add_argument('dialogue_id', type=int, required=True)
 
@@ -56,14 +58,16 @@ class MessagesListResource(Resource):
         message = Message(
             text=args['text'],
             user_id=args['user_id'],
-            dialogue_id=args['dialogue_id']
+            dialogue_id=args['dialogue_id'],
+            date=args['date']
         )
-        current_user.messages.append(message)
+        if current_user.is_authenticated:
+            current_user.messages.append(message)
+            session.merge(current_user)
         abort_if_dialogue_not_found(args['dialogue_id'])
         dialogue = session.query(Dialogue).get(args['dialogue_id'])
         dialogue.messages.append(message)
         session.merge(dialogue)
-        session.merge(current_user)
         session.add(message)
         session.commit()
         return jsonify({'success': 'OK'})

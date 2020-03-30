@@ -1,3 +1,4 @@
+# Импорты необходимых библиотек, классов и функций
 import sqlalchemy
 from sqlalchemy import orm
 from sqlalchemy_serializer import SerializerMixin
@@ -15,4 +16,7 @@ class Dialogue(SqlAlchemyBase, SerializerMixin):
 
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, autoincrement=True)
     name = sqlalchemy.Column(sqlalchemy.String, nullable=False)
-    messages = orm.relation('Messages', back_populates='dialogue')
+    messages = orm.relation('Message', back_populates='dialogue')
+
+    def __repr__(self):
+        return f"Dialogue #{self.id} '{self.name}'"
