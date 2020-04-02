@@ -1,5 +1,4 @@
 # Импорты необходимых библиотек, классов и функций
-from datetime import datetime
 from flask import jsonify
 from flask_login import current_user
 from flask_restful import abort, Resource
@@ -8,14 +7,16 @@ from data import db_session
 from flask_restful import reqparse
 from data.messages import Message
 
+# Парсер аргументов
 parser = reqparse.RequestParser()
 parser.add_argument('text', required=True)
-parser.add_argument('date', type=datetime)
 parser.add_argument('user_id', type=int, required=True)
 parser.add_argument('dialogue_id', type=int, required=True)
 
 
 def abort_if_message_not_found(message_id):
+    """Функция проверки существования сообщения.
+                Ошибка, если сообщение не найдено."""
     session = db_session.create_session()
     message = session.query(Message).get(message_id)
     if not message:
@@ -23,6 +24,8 @@ def abort_if_message_not_found(message_id):
 
 
 def abort_if_dialogue_not_found(dialogue_id):
+    """Функция проверки существования диалога.
+                Ошибка, если диалог не найден."""
     session = db_session.create_session()
     dialogue = session.query(Dialogue).get(dialogue_id)
     if not dialogue:
@@ -59,7 +62,6 @@ class MessagesListResource(Resource):
             text=args['text'],
             user_id=args['user_id'],
             dialogue_id=args['dialogue_id'],
-            date=args['date']
         )
         if current_user.is_authenticated:
             current_user.messages.append(message)

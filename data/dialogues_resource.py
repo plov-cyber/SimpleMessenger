@@ -7,12 +7,15 @@ from data import db_session
 from flask_restful import reqparse
 from data.dialogues import Dialogue
 
+# Парсер аргументов
 parser = reqparse.RequestParser()
 parser.add_argument('name', required=True)
 parser.add_argument('members', required=True, action='append')
 
 
 def abort_if_dialogue_not_found(dialogue_id):
+    """Функция проверки существования диалога.
+            Ошибка, если диалог не найден."""
     session = db_session.create_session()
     dialogue = session.query(Dialogue).get(dialogue_id)
     if not dialogue:
@@ -20,6 +23,8 @@ def abort_if_dialogue_not_found(dialogue_id):
 
 
 def abort_if_dialogue_already_exists(name, members):
+    """Функция проверки существования диалога.
+                Ошибка, если диалог уже существует."""
     session = db_session.create_session()
     dialogue = session.query(Dialogue).filter(Dialogue.name == name).first()
     if dialogue and members == [user.id for user in dialogue.users]:
@@ -27,6 +32,8 @@ def abort_if_dialogue_already_exists(name, members):
 
 
 def abort_if_user_not_found(user_id):
+    """Функция проверки существования пользователя.
+        Ошибка, если пользователь не найден."""
     session = db_session.create_session()
     user = session.query(User).get(user_id)
     if not user:

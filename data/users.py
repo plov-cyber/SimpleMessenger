@@ -1,3 +1,5 @@
+"""Класс Пользователя"""
+
 # Импорты необходимых библиотек, классов и функций
 import sqlalchemy
 from flask_login import UserMixin
@@ -19,12 +21,15 @@ class User(SqlAlchemyBase, UserMixin, SerializerMixin):
     hashed_password = sqlalchemy.Column(sqlalchemy.String, nullable=False)
     dialogues = orm.relation('Dialogue', secondary='user_to_dialogue', backref='users')
     messages = orm.relation('Message', back_populates='user')
+    news = orm.relation("News", back_populates='user')
 
     def __repr__(self):
         return f'<User> {self.surname} {self.name}'
 
     def set_password(self, password):
+        """Функция установки пароля"""
         self.hashed_password = generate_password_hash(password)
 
     def check_password(self, password):
+        """Функция проверки пароля"""
         return check_password_hash(self.hashed_password, password)

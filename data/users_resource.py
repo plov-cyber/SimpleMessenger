@@ -5,16 +5,19 @@ from data import db_session
 from data.users import User
 from flask_restful import reqparse
 
+# Парсер аргументов
 parser = reqparse.RequestParser()
 parser.add_argument('login', required=True)
 parser.add_argument('name', required=True)
 parser.add_argument('surname', required=True)
 parser.add_argument('age', type=int, required=True)
-parser.add_argument('about')
+parser.add_argument('about', required=True)
 parser.add_argument('password', required=True)
 
 
 def abort_if_user_not_found(user_id):
+    """Функция проверки существования пользователя.
+        Ошибка, если пользователь не найден."""
     session = db_session.create_session()
     user = session.query(User).get(user_id)
     if not user:
@@ -22,6 +25,8 @@ def abort_if_user_not_found(user_id):
 
 
 def abort_if_user_already_exists(user_login):
+    """Функция проверки существования пользователя.
+        Ошибка, если пользователь уже существует."""
     session = db_session.create_session()
     user = session.query(User).filter(User.login == user_login).first()
     if user:

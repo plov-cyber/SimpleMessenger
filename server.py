@@ -22,6 +22,7 @@ login_manager.init_app(app)
 
 @login_manager.user_loader
 def load_user(user_id):
+    """Менеджер авторизации"""
     session = db_session.create_session()
     return session.query(User).get(user_id)
 
@@ -29,7 +30,6 @@ def load_user(user_id):
 def main():
     """Главная функция. Устанавливает соединение с базой данных.
     Подсоединяет ресурсы. Запускает приложение"""
-
     db_session.global_init('db/data.sqlite')
 
     api.add_resource(UsersResource, '/sm/users/<int:user_id>')
@@ -46,7 +46,6 @@ def main():
 @app.errorhandler(404)
 def not_found(error):
     """Отлавливает ошибку 404. Возвращает страницу с сообщением об ошибке."""
-
     return make_response(jsonify({'error': 'Not found'}), 404)
 
 
