@@ -1,1 +1,1 @@
-from . import users, messages, dialogues
+from . import users, messages, dialogues, news

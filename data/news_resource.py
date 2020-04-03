@@ -1,5 +1,6 @@
 # Импорты необходимых библиотек, классов и функций
 from flask import jsonify
+from flask_login import current_user
 from flask_restful import reqparse, abort, Resource
 from data import db_session
 from data.news import News
@@ -22,13 +23,19 @@ def abort_if_news_not_found(news_id):
 
 
 class NewsResource(Resource):
+    """Ресурс Новости"""
+
     def get(self, news_id):
+        """Получить одну новость"""
+
         abort_if_news_not_found(news_id)
         session = db_session.create_session()
         news = session.query(News).get(news_id)
         return jsonify({'news': news.to_dict()})
 
     def delete(self, news_id):
+        """Удалить новость"""
+
         abort_if_news_not_found(news_id)
         session = db_session.create_session()
         news = session.query(News).get(news_id)
@@ -38,12 +45,18 @@ class NewsResource(Resource):
 
 
 class NewsListResource(Resource):
+    """Ресурс Новостей"""
+
     def get(self):
+        """Получить все новости"""
+
         session = db_session.create_session()
         news = session.query(News).all()
         return jsonify({'news': [item.to_dict() for item in news]})
 
     def post(self):
+        """Добавить новую новость"""
+
         args = parser.parse_args()
         session = db_session.create_session()
         news = News(
@@ -52,6 +65,9 @@ class NewsListResource(Resource):
             user_id=args['user_id'],
             is_private=args['is_private']
         )
+        if current_user.is_authenticated:
+            current_user.news.append(news)
+            session.merge(current_user)
         session.add(news)
         session.commit()
         return jsonify({'success': 'OK'})

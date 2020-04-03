@@ -34,13 +34,19 @@ def abort_if_user_already_exists(user_login):
 
 
 class UsersResource(Resource):
+    """Ресурс Пользователя"""
+
     def get(self, user_id):
+        """Получить одного пользователя"""
+
         abort_if_user_not_found(user_id)
         session = db_session.create_session()
         user = session.query(User).get(user_id)
         return jsonify({'user': user.to_dict()})
 
     def delete(self, user_id):
+        """Удалить пользователя"""
+
         abort_if_user_not_found(user_id)
         session = db_session.create_session()
         user = session.query(User).get(user_id)
@@ -50,12 +56,18 @@ class UsersResource(Resource):
 
 
 class UsersListResource(Resource):
+    """Ресурс Пользователей"""
+
     def get(self):
+        """Получить всех пользователей"""
+
         session = db_session.create_session()
         users = session.query(User).all()
         return jsonify({'users': [item.to_dict() for item in users]})
 
     def post(self):
+        """Добавить нового пользователя"""
+
         args = parser.parse_args()
         abort_if_user_already_exists(args['login'])
         session = db_session.create_session()

@@ -33,13 +33,19 @@ def abort_if_dialogue_not_found(dialogue_id):
 
 
 class MessagesResource(Resource):
+    """Ресурс Сообщения"""
+
     def get(self, message_id):
+        """Получить одно сообщение"""
+
         abort_if_message_not_found(message_id)
         session = db_session.create_session()
         message = session.query(Message).get(message_id)
         return jsonify({'message': message.to_dict()})
 
     def delete(self, message_id):
+        """Удалить сообщение"""
+
         abort_if_message_not_found(message_id)
         session = db_session.create_session()
         message = session.query(Message).get(message_id)
@@ -49,12 +55,18 @@ class MessagesResource(Resource):
 
 
 class MessagesListResource(Resource):
+    """Ресурс Сообщений"""
+
     def get(self):
+        """Получить все сообщения"""
+
         session = db_session.create_session()
         messages = session.query(Message).all()
         return jsonify({'messages': [item.to_dict() for item in messages]})
 
     def post(self):
+        """Добавить новое сообщение"""
+
         args = parser.parse_args()
         session = db_session.create_session()
         # noinspection PyArgumentList

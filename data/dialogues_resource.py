@@ -41,13 +41,19 @@ def abort_if_user_not_found(user_id):
 
 
 class DialoguesResource(Resource):
+    """Ресурс Диалога"""
+
     def get(self, dialogue_id):
+        """Получить один диалог"""
+
         abort_if_dialogue_not_found(dialogue_id)
         session = db_session.create_session()
         dialogue = session.query(Dialogue).get(dialogue_id)
         return jsonify({'dialogue': dialogue.to_dict(only=['id', 'name', 'messages'])})
 
     def delete(self, dialogue_id):
+        """Удалить диалог"""
+
         abort_if_dialogue_not_found(dialogue_id)
         session = db_session.create_session()
         dialogue = session.query(Dialogue).get(dialogue_id)
@@ -57,12 +63,18 @@ class DialoguesResource(Resource):
 
 
 class DialoguesListResource(Resource):
+    """Ресурс Диалогов"""
+
     def get(self):
+        """Получить все диалоги"""
+
         session = db_session.create_session()
         dialogues = session.query(Dialogue).all()
         return jsonify({'dialogues': [item.to_dict(only=['id', 'name', 'messages']) for item in dialogues]})
 
     def post(self):
+        """Добавить новый диалог"""
+
         args = parser.parse_args()
         abort_if_dialogue_already_exists(args['name'], args['members'])
         session = db_session.create_session()
