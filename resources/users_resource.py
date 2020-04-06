@@ -1,6 +1,6 @@
 # Импорты необходимых библиотек, классов и функций
 from flask import jsonify
-from flask_restful import abort, Resource
+from flask_restful import Resource, abort
 from data import db_session
 from data.users import User
 from flask_restful import reqparse
@@ -42,7 +42,8 @@ class UsersResource(Resource):
         abort_if_user_not_found(user_id)
         session = db_session.create_session()
         user = session.query(User).get(user_id)
-        return jsonify({'user': user.to_dict()})
+        return jsonify({'user': user.to_dict(
+            only=['id', 'login', 'name', 'surname', 'age', 'about'])})
 
     def delete(self, user_id):
         """Удалить пользователя"""
@@ -63,7 +64,10 @@ class UsersListResource(Resource):
 
         session = db_session.create_session()
         users = session.query(User).all()
-        return jsonify({'users': [item.to_dict() for item in users]})
+        return jsonify({'users': [
+            item.to_dict(
+                only=['id', 'login', 'name', 'surname', 'age', 'about']) for
+            item in users]})
 
     def post(self):
         """Добавить нового пользователя"""

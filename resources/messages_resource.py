@@ -41,7 +41,8 @@ class MessagesResource(Resource):
         abort_if_message_not_found(message_id)
         session = db_session.create_session()
         message = session.query(Message).get(message_id)
-        return jsonify({'message': message.to_dict()})
+        return jsonify({'message': message.to_dict(
+            only=['id', 'text', 'user_id', 'dialogue_id'])})
 
     def delete(self, message_id):
         """Удалить сообщение"""
@@ -62,7 +63,8 @@ class MessagesListResource(Resource):
 
         session = db_session.create_session()
         messages = session.query(Message).all()
-        return jsonify({'messages': [item.to_dict() for item in messages]})
+        return jsonify({'messages': [item.to_dict(
+            only=['id', 'text', 'user_id', 'dialogue_id']) for item in messages]})
 
     def post(self):
         """Добавить новое сообщение"""

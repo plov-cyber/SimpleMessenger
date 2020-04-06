@@ -10,7 +10,7 @@ from data.dialogues import Dialogue
 # Парсер аргументов
 parser = reqparse.RequestParser()
 parser.add_argument('name', required=True)
-parser.add_argument('members', required=True, action='append')
+parser.add_argument('members', required=True, action='append', type=int)
 
 
 def abort_if_dialogue_not_found(dialogue_id):
@@ -49,7 +49,7 @@ class DialoguesResource(Resource):
         abort_if_dialogue_not_found(dialogue_id)
         session = db_session.create_session()
         dialogue = session.query(Dialogue).get(dialogue_id)
-        return jsonify({'dialogue': dialogue.to_dict(only=['id', 'name', 'messages'])})
+        return jsonify({'dialogue': dialogue.to_dict(only=['id', 'name'])})
 
     def delete(self, dialogue_id):
         """Удалить диалог"""
@@ -70,7 +70,7 @@ class DialoguesListResource(Resource):
 
         session = db_session.create_session()
         dialogues = session.query(Dialogue).all()
-        return jsonify({'dialogues': [item.to_dict(only=['id', 'name', 'messages']) for item in dialogues]})
+        return jsonify({'dialogues': [item.to_dict(only=['id', 'name']) for item in dialogues]})
 
     def post(self):
         """Добавить новый диалог"""
