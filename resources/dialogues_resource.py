@@ -19,7 +19,7 @@ def abort_if_dialogue_not_found(dialogue_id):
     session = db_session.create_session()
     dialogue = session.query(Dialogue).get(dialogue_id)
     if not dialogue:
-        abort(404, message=f"Dialogue {dialogue_id} not found")
+        abort(404, message=f"Диалог {dialogue_id} не найден")
 
 
 def abort_if_dialogue_already_exists(name, members):
@@ -28,7 +28,8 @@ def abort_if_dialogue_already_exists(name, members):
     session = db_session.create_session()
     dialogue = session.query(Dialogue).filter(Dialogue.name == name).first()
     if dialogue and members == [user.id for user in dialogue.users]:
-        abort(404, message=f"Dialogue with name='{name}' and members='{members}' already exists")
+        abort(404, message=f"Диалог с именем:'{name}' и "
+                           f"участниками:'{[user.name for user in dialogue.users]}' уже существует")
 
 
 def abort_if_user_not_found(user_id):
@@ -37,7 +38,7 @@ def abort_if_user_not_found(user_id):
     session = db_session.create_session()
     user = session.query(User).get(user_id)
     if not user:
-        abort(404, message=f"User {user_id} not found")
+        abort(404, message=f"Пользователь {user_id} не найден")
 
 
 class DialoguesResource(Resource):

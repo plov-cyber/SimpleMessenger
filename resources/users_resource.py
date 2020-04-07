@@ -21,7 +21,7 @@ def abort_if_user_not_found(user_id):
     session = db_session.create_session()
     user = session.query(User).get(user_id)
     if not user:
-        abort(404, message=f"User {user_id} not found")
+        abort(404, message=f"Пользователь {user_id} не найден")
 
 
 def abort_if_user_already_exists(user_login):
@@ -30,7 +30,12 @@ def abort_if_user_already_exists(user_login):
     session = db_session.create_session()
     user = session.query(User).filter(User.login == user_login).first()
     if user:
-        abort(404, message=f"User with login='{user_login}' already exists")
+        abort(404, message=f"Пользователь с логином: '{user_login}' уже существует")
+
+
+def abort_if_age_neg(age):
+    if age < 0:
+        abort(404, message=f'Возраст не может быть отрицательным')
 
 
 class UsersResource(Resource):
@@ -74,6 +79,7 @@ class UsersListResource(Resource):
 
         args = parser.parse_args()
         abort_if_user_already_exists(args['login'])
+        abort_if_age_neg(args['age'])
         session = db_session.create_session()
         # noinspection PyArgumentList
         user = User(

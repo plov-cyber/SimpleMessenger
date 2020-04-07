@@ -20,7 +20,7 @@ def abort_if_message_not_found(message_id):
     session = db_session.create_session()
     message = session.query(Message).get(message_id)
     if not message:
-        abort(404, message=f"Message {message_id} not found")
+        abort(404, message=f"Сообщение {message_id} не найдено")
 
 
 def abort_if_dialogue_not_found(dialogue_id):
@@ -29,7 +29,7 @@ def abort_if_dialogue_not_found(dialogue_id):
     session = db_session.create_session()
     dialogue = session.query(Dialogue).get(dialogue_id)
     if not dialogue:
-        abort(404, message=f"Dialogue {dialogue_id} not found")
+        abort(404, message=f"Диалог {dialogue_id} не найден")
 
 
 class MessagesResource(Resource):

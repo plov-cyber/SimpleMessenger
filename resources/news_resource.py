@@ -19,7 +19,7 @@ def abort_if_news_not_found(news_id):
     session = db_session.create_session()
     news = session.query(News).get(news_id)
     if not news:
-        abort(404, message=f"News {news_id} not found")
+        abort(404, message=f"Новость {news_id} не найдена")
 
 
 class NewsResource(Resource):
@@ -59,6 +59,7 @@ class NewsListResource(Resource):
 
         args = parser.parse_args()
         session = db_session.create_session()
+        # noinspection PyArgumentList
         news = News(
             title=args['title'],
             content=args['content'],

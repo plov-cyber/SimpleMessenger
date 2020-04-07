@@ -4,11 +4,12 @@
 import os
 import requests
 from flask import Flask, render_template
-from flask_login import LoginManager, login_user, current_user
+from flask_login import LoginManager, login_user, current_user, logout_user
 from flask_restful import Api
 from werkzeug.utils import redirect
 from forms.loginform import LoginForm
-from data.db_session import create_session, global_init
+from data import db_session
+from forms.regform import RegisterForm
 from resources.news_resource import NewsResource, NewsListResource
 from data.users import User
 from resources.users_resource import UsersListResource, UsersResource
@@ -26,14 +27,14 @@ login_manager.init_app(app)
 @login_manager.user_loader
 def load_user(user_id):
     """Менеджер авторизации"""
-    session = create_session()
+    session = db_session.create_session()
     return session.query(User).get(user_id)
 
 
 def main():
     """Главная функция. Устанавливает соединение с базой данных.
     Подсоединяет ресурсы. Запускает приложение"""
-    global_init('db/data.sqlite')
+    db_session.global_init('db/data.sqlite')
 
     api.add_resource(UsersResource, '/users/<int:user_id>')
     api.add_resource(UsersListResource, '/users')
@@ -64,7 +65,29 @@ def bad_request(error):
 def index():
     if current_user.is_authenticated:
         return redirect('/news')
-    return redirect('/login')
+    return redirect('/register')
+
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    form = RegisterForm()
+    if form.validate_on_submit():
+        if form.password.data != form.password_again.data:
+            return render_template('register.html', title='Регистрация', form=form,
+                                   message='Пароли не совпадают')
+        res = requests.post('http://127.0.0.1:5000/users', json={
+            'login': form.login.data,
+            'name': form.name.data,
+            'surname': form.surname.data,
+            'age': form.age.data,
+            'about': '',
+            'password': form.password.data
+        }).json()
+        if 'message' in res:
+            return render_template('register.html', title='Регистрация', form=form,
+                                   message=res['message'])
+        return redirect('/login')
+    return render_template('register.html', title='Регистрация', form=form)
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -73,7 +96,7 @@ def login():
         return redirect('/logout')
     form = LoginForm()
     if form.validate_on_submit():
-        session = create_session()
+        session = db_session.create_session()
         user = session.query(User).filter(User.login == form.login.data).first()
         if user and user.check_password(form.password.data):
             login_user(user, remember=form.remember_me.data)
@@ -82,6 +105,20 @@ def login():
                                message='Неправильный логин или пароль',
                                form=form)
     return render_template('login.html', title='Авторизация', form=form)
+
+
+@app.route('/logout')
+def logout():
+    if current_user.is_authenticated:
+        logout_user()
+    return redirect('/login')
+
+
+@app.route('/profile')
+def profile():
+    if not current_user.is_authenticated:
+        return redirect('/login')
+
 
 
 if __name__ == '__main__':
