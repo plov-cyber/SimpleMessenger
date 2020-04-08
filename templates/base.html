@@ -12,7 +12,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-info">
     <div class="container-fluid">
         <a class="navbar-brand" href="/">
-            <img src="static/img/sm_icon.png" style="float: left" width="50" height="50" alt="">
+            <img src="static/img/icons/sm_icon.png" style="float: left" width="50" height="50" alt="">
             <h1>SimpleMessenger</h1>
         </a>
 
@@ -38,7 +38,45 @@
 </nav>
 <br>
 
-{% block content %}{% endblock %}
+{% if current_user.is_authenticated %}
+<div class="container-fluid" style="max-width: 900px; margin:auto;">
+    <div class="row">
+        <div class="col-3">
+            <table class="table table-bordered">
+                <tbody>
+                <tr>
+                    <th>
+                        <img src="static/img/icons/home_icon.png" width="30" height="30">
+                        <a href="/profile" class="btn btn-outline-info" role="button">
+                            Моя страница
+                        </a>
+                    </th>
+                </tr>
+                <tr>
+                    <th><img src="static/img/icons/news_icon.png" width="30" height="30">
+                        <a href="/news" class="btn btn-outline-info" role="button">
+                            Новости
+                        </a>
+                    </th>
+                </tr>
+                <tr>
+                    <th><img src="static/img/icons/msg_icon.png" width="30" height="30">
+                        <a href="/messages" class="btn btn-outline-info" role="button">
+                            Сообщения
+                        </a>
+                    </th>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="col-8">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% else %}
+{% block forms %}{% endblock %}
+{% endif %}
 
 <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
         integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"

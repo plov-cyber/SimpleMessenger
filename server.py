@@ -4,7 +4,7 @@
 import os
 import requests
 from flask import Flask, render_template
-from flask_login import LoginManager, login_user, current_user, logout_user
+from flask_login import LoginManager, login_user, current_user, logout_user, login_required
 from flask_restful import Api
 from werkzeug.utils import redirect
 from forms.loginform import LoginForm
@@ -114,11 +114,18 @@ def logout():
     return redirect('/login')
 
 
+@app.route('/news')
+def news():
+    if not current_user.is_authenticated:
+        return redirect('/login')
+    return render_template('news.html', user=current_user, title='Новости')
+
+
 @app.route('/profile')
 def profile():
     if not current_user.is_authenticated:
         return redirect('/login')
-
+    return render_template('profile.html', user=current_user, title='Профиль')
 
 
 if __name__ == '__main__':
