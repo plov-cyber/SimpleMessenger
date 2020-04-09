@@ -7,7 +7,6 @@ from data.news import News
 
 # Парсер аргументов
 parser = reqparse.RequestParser()
-parser.add_argument('title', required=True)
 parser.add_argument('content', required=True)
 parser.add_argument('is_private', type=bool, required=True)
 parser.add_argument('user_id', type=int, required=True)
@@ -31,7 +30,7 @@ class NewsResource(Resource):
         abort_if_news_not_found(news_id)
         session = db_session.create_session()
         news = session.query(News).get(news_id)
-        return jsonify({'news': news.to_dict(only=['title', 'content', 'is_private', 'user_id'])})
+        return jsonify({'news': news.to_dict(only=['content', 'is_private', 'user_id'])})
 
     def delete(self, news_id):
         """Удалить новость"""
@@ -52,7 +51,7 @@ class NewsListResource(Resource):
 
         session = db_session.create_session()
         news = session.query(News).all()
-        return jsonify({'news': [item.to_dict(only=['title', 'content', 'is_private', 'user_id']) for item in news]})
+        return jsonify({'news': [item.to_dict(only=['content', 'is_private', 'user_id']) for item in news]})
 
     def post(self):
         """Добавить новую новость"""
@@ -61,7 +60,6 @@ class NewsListResource(Resource):
         session = db_session.create_session()
         # noinspection PyArgumentList
         news = News(
-            title=args['title'],
             content=args['content'],
             user_id=args['user_id'],
             is_private=args['is_private']
