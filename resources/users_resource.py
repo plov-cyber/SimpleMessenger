@@ -34,6 +34,7 @@ def abort_if_user_already_exists(user_login):
 
 
 def abort_if_age_neg(age):
+    """Функция проверки возраста на отрицательность."""
     if age < 0:
         abort(404, message=f'Возраст не может быть отрицательным')
 
@@ -57,6 +58,22 @@ class UsersResource(Resource):
         session = db_session.create_session()
         user = session.query(User).get(user_id)
         session.delete(user)
+        session.commit()
+        return jsonify({'success': 'OK'})
+
+    def put(self, user_id):
+        """Изменить данные пользователя"""
+
+        args = parser.parse_args()
+        abort_if_user_not_found(user_id)
+        abort_if_age_neg(args['age'])
+        session = db_session.create_session()
+        user = session.query(User).get(user_id)
+        user.name = args['name']
+        user.surname = args['surname']
+        user.age = args['age']
+        user.about = args['about']
+        user.set_password(args['password'])
         session.commit()
         return jsonify({'success': 'OK'})
 

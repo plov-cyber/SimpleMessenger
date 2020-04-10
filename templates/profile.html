@@ -5,12 +5,28 @@
     <div class="row">
         <h1 align="center">{{ current_user.name }} {{ current_user.surname }}</h1>
     </div>
-    <div class="row">
+    <br>
 
+    <div class="row">
+        <h3>Возраст: {{ current_user.age }}</h3>
     </div>
+    <br>
+
+    <div class="row">
+        <h3>О себе</h3>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <textarea style="width: 100%;" class="form-control" rows="3" readonly>{{ current_user.about }}</textarea>
+        </div>
+    </div>
+    <br>
+
     <div class="row">
         <h3>Новая новость</h3>
     </div>
+
     <div class="row">
         <div class="col-12">
             <form method="post" novalidate>
