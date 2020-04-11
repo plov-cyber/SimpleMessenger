@@ -1,0 +1,62 @@
+{% extends "dialogues.html" %}
+
+{% block messages %}
+<form method="post" novalidate>
+    {{ form.hidden_tag() }}
+    {{ form.csrf_token }}
+    <h1>Новая беседа</h1>
+    <br>
+
+    <div class="form-group row">
+        {{ form.name.label(for="name_input", class="col-sm-2 col-form-label") }}
+        <div class="col-sm-10">
+            {{ form.name(class="form-control", id="name_input",
+            placeholder="Название диалога - имя собеседника") }}
+        </div>
+    </div>
+    {% for error in form.name.errors %}
+    <div class="row">
+        <div class="col-sm-2"></div>
+        <div class="col-sm-10 alert alert-danger" role="alert">
+            {{ error }}
+        </div>
+    </div>
+    {% endfor %}
+
+    <div class="form-group row">
+        {{ form.members.label(for="members-select", class="col-sm-2 col-form-label") }}
+        <div class="col-sm-10 dropdown">
+            <a class="btn btn-white dropdown-toggle" href="#" role="button" id="dropdownMenuLink"
+               data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Выберите собеседников
+            </a>
+
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                {% for subfield in form.members %}
+                <div class="dropdown-item">
+                    {{ subfield }} {{ subfield.label }}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% for error in form.members.errors %}
+    <div class="row">
+        <div class="col-sm-2"></div>
+        <div class="col-sm-10 alert alert-danger" role="alert">
+            {{ error }}
+        </div>
+    </div>
+    {% endfor %}
+
+    <div class="form-group row">
+        <div class="col-sm-12">
+            {{ form.submit(type="submit", class="btn btn-primary") }}
+        </div>
+    </div>
+
+    {% if message %}
+    <div class="row alert alert-danger">{{ message }}</div>
+    {% endif %}
+</form>
+{% endblock %}

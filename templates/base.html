@@ -6,14 +6,15 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
           integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
     {% block style %}{% endblock %}
+    {% block script%}{% endblock %}
     <title>{{title}}</title>
 </head>
-<body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-info">
+<body style="background-color: #C4EAFF;">
+<nav class="navbar navbar-expand-lg navbar-light bg-info">
     <div class="container-fluid">
         <a class="navbar-brand" href="/">
             <img src="static/img/icons/sm_icon.png" style="float: left" width="50" height="50" alt="">
-            <h1>SimpleMessenger</h1>
+            <h1 style="color: #3460DB;">SimpleMessenger</h1>
         </a>
 
         {% if current_user.is_authenticated %}
@@ -42,7 +43,7 @@
 <br>
 
 {% if current_user.is_authenticated %}
-<div class="container-fluid" style="max-width: 900px; margin:auto;">
+<div class="container-fluid mx-auto" style="max-width: 1100px;">
     <div class="row">
         <div class="col-3">
             <table class="table table-borderless">
@@ -64,7 +65,7 @@
                 </tr>
                 <tr>
                     <th><img src="static/img/icons/msg_icon.png" width="30" height="30">
-                        <a href="/messages" class="btn btn-outline-info" role="button">
+                        <a href="/dialogues" class="btn btn-outline-info" role="button">
                             Сообщения
                         </a>
                     </th>
@@ -72,7 +73,7 @@
                 </tbody>
             </table>
         </div>
-        <div class="col-8">
+        <div class="col-9 shadow-sm rounded" style="background-color: #F0F0F0;">
             {% block content %}{% endblock %}
         </div>
     </div>
@@ -80,6 +81,8 @@
 {% else %}
 {% block forms %}{% endblock %}
 {% endif %}
+
+{% block modal %}{% endblock %}
 
 <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
         integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
@@ -90,5 +93,6 @@
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
         integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
         crossorigin="anonymous"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 </body>
 </html>

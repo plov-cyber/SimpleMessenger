@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <br>
+    <div class="row">
+        <div class="col-4">
+            {% for dialogue in dialogues %}
+            <div class="container-fluid bg-white rounded">
+                <div class="row">
+                    <div class="col-10">
+                        {{ dialogue.name }}
+                    </div>
+                    <div class="col-2">
+                        <img src="static/img/icons/close_icon.png"
+                             width="15" height="15" data-toggle="modal" data-target="#deleteDialogueModal">
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="col-8">
+            {% block messages %}
+            <div class="container-fluid align-middle" align="center">
+                </a><img src="static/img/icons/chat_icon.png">
+                <h5 class="nav-link" style="color: gray;">Пожалуйста, выберите беседу или <a
+                        href="/new_dialogue">создайте новую</a>
+                </h5>
+            </div>
+            {% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block modal %}
+<div class="modal fade" id="deleteDialogueModal" tabindex="-1" role="dialog" aria-labelledby="deleteDialogueModalTitle"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteDialogueModalTitle">Удалить диалог</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                Вы выйдете из беседы и диалог удалится.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
+                <button type="button" class="btn btn-primary">Удалить</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

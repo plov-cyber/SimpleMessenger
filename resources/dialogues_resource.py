@@ -83,9 +83,6 @@ class DialoguesListResource(Resource):
         dialogue = Dialogue(
             name=args['name']
         )
-        if current_user.is_authenticated:
-            current_user.dialogues.append(dialogue)
-            session.merge(current_user)
         for user_id in args['members']:
             abort_if_user_not_found(user_id)
             user = session.query(User).get(user_id)

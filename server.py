@@ -8,7 +8,7 @@ from flask_login import LoginManager, login_user, current_user, logout_user, log
 from flask_ngrok import run_with_ngrok
 from flask_restful import Api
 from werkzeug.utils import redirect
-
+from forms.dialogue_form import DialogueForm
 from forms.edit_profile_form import EditProfileForm
 from forms.login_form import LoginForm
 from data import db_session
@@ -41,14 +41,14 @@ def main():
     Подсоединяет ресурсы. Запускает приложение."""
     db_session.global_init('db/data.sqlite')
 
-    api.add_resource(UsersResource, '/users/<int:user_id>')
-    api.add_resource(UsersListResource, '/users')
-    api.add_resource(DialoguesResource, '/dialogues/<int:dialogue_id>')
-    api.add_resource(DialoguesListResource, '/dialogues')
-    api.add_resource(MessagesResource, '/messages/<int:message_id>')
-    api.add_resource(MessagesListResource, '/messages')
-    api.add_resource(NewsResource, '/news/<int:news_id>')
-    api.add_resource(NewsListResource, '/news')
+    api.add_resource(UsersResource, '/api_users/<int:user_id>')
+    api.add_resource(UsersListResource, '/api_users')
+    api.add_resource(DialoguesResource, '/api_dialogues/<int:dialogue_id>')
+    api.add_resource(DialoguesListResource, '/api_dialogues')
+    api.add_resource(MessagesResource, '/api_messages/<int:message_id>')
+    api.add_resource(MessagesListResource, '/api_messages')
+    api.add_resource(NewsResource, '/api_news/<int:news_id>')
+    api.add_resource(NewsListResource, '/api_news')
 
     port = int(os.environ.get("PORT", 5000))
     app.run(host='127.0.0.1', port=port)
@@ -83,10 +83,7 @@ def register():
     """Страница регистрации пользователя."""
     form = RegisterForm()
     if form.validate_on_submit():
-        if form.password.data != form.password_again.data:
-            return render_template('register.html', title='Регистрация', form=form,
-                                   message='Пароли не совпадают')
-        res = requests.post('http://127.0.0.1:5000/users', json={
+        res = requests.post('http://127.0.0.1:5000/api_users', json={
             'login': form.login.data,
             'name': form.name.data,
             'surname': form.surname.data,
@@ -133,7 +130,7 @@ def profile():
     """Страница профиля пользователя."""
     form = NewsForm()
     if form.validate_on_submit():
-        res = requests.post('http://127.0.0.1:5000/news', json={
+        res = requests.post('http://127.0.0.1:5000/api_news', json={
             'content': form.content.data,
             'is_private': form.is_private.data,
             'user_id': current_user.id
@@ -152,7 +149,7 @@ def edit_profile():
     form = EditProfileForm()
     if form.validate_on_submit():
         if current_user.check_password(form.password.data):
-            res = requests.put(f'http://127.0.0.1:5000/users/{current_user.id}', json={
+            res = requests.put(f'http://127.0.0.1:5000/api_users/{current_user.id}', json={
                 'login': current_user.login,
                 'name': form.name.data,
                 'surname': form.surname.data,
@@ -174,6 +171,33 @@ def edit_profile():
     return render_template('profile_edit.html', title='Редактирование профиля', form=form)
 
 
+@app.route('/dialogues')
+@login_required
+def dialogues():
+    """Страница пользователя с диалогами."""
+    return render_template('dialogues.html', title='Диалоги', dialogues=current_user.dialogues)
+
+
+@app.route('/new_dialogue', methods=['GET', 'POST'])
+@login_required
+def new_dialogue():
+    """Страница для создания нового диалога."""
+    form = DialogueForm()
+    users = requests.get('http://127.0.0.1:5000/api_users').json()['users']
+    form.members.choices = [(user['id'], f'{user["name"]} {user["surname"]}') for user
+                            in users if user['login'] != current_user.login]
+    if form.validate_on_submit():
+        res = requests.post('http://127.0.0.1:5000/api_dialogues', json={
+            'name': form.name.data,
+            'members': form.members.data
+        }).json()
+        if 'success' in res:
+            return redirect('/dialogues')
+        return render_template('/new_dialogue.html', title='Новый диалог', form=form,
+                               message=res['message'])
+    return render_template('new_dialogue.html', title='Новый диалог', form=form)
+
+
 @app.route('/settings')
 @login_required
 def settings():
@@ -186,13 +210,6 @@ def settings():
 def news():
     """Страница с новостями других пользователей."""
     return render_template('news.html', title='Новости')
-
-
-@app.route('/messages')
-@login_required
-def messages():
-    """Страница пользователя с диалогами."""
-    return render_template('base.html', title='Диалоги')
 
 
 if __name__ == '__main__':
