@@ -1,0 +1,12 @@
+{% extends "dialogues.html" %}
+
+{% block messages %}
+<div class="row">
+    <h3>{{ dialogue['name'] }}</h3>
+</div>
+<div class="row container-fluid" style="overflow: auto;">
+    {% for message in messages %}
+    {% set user = users|selectattr("id", message.user_id) %}
+    {% endfor %}
+</div>
+{% endblock %}

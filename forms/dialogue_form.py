@@ -11,7 +11,7 @@ class MultiCheckboxField(SelectMultipleField):
 
 class DialogueForm(FlaskForm):
     """Класс формы для создания диалога"""
-    name = StringField('Название беседы', validators=[DataRequired(message='Обязательное поле')])
+    name = StringField('Название беседы')
     members = MultiCheckboxField('Собеседники', coerce=int,
                                  validators=[DataRequired(message='Выберите собеседника')])
     submit = SubmitField('Создать')

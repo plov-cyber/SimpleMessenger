@@ -8,6 +8,8 @@ from flask_restful import reqparse
 from data.messages import Message
 
 # Парсер аргументов
+from data.users import User
+
 parser = reqparse.RequestParser()
 parser.add_argument('text', required=True)
 parser.add_argument('user_id', type=int, required=True)
@@ -30,6 +32,15 @@ def abort_if_dialogue_not_found(dialogue_id):
     dialogue = session.query(Dialogue).get(dialogue_id)
     if not dialogue:
         abort(404, message=f"Диалог {dialogue_id} не найден")
+
+
+def abort_if_user_not_found(user_id):
+    """Функция проверки существования пользователя.
+        Ошибка, если пользователь не найден."""
+    session = db_session.create_session()
+    user = session.query(User).get(user_id)
+    if not user:
+        abort(404, message=f"Пользователь {user_id} не найден")
 
 
 class MessagesResource(Resource):
@@ -77,9 +88,10 @@ class MessagesListResource(Resource):
             user_id=args['user_id'],
             dialogue_id=args['dialogue_id'],
         )
-        if current_user.is_authenticated:
-            current_user.messages.append(message)
-            session.merge(current_user)
+        abort_if_user_not_found(args['user_id'])
+        user = session.query(User).get(args['user_id'])
+        user.messages.append(message)
+        session.merge(user)
         abort_if_dialogue_not_found(args['dialogue_id'])
         dialogue = session.query(Dialogue).get(args['dialogue_id'])
         dialogue.messages.append(message)

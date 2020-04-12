@@ -6,12 +6,15 @@ import requests
 from flask import Flask, render_template, request
 from flask_login import LoginManager, login_user, current_user, logout_user, login_required
 from flask_ngrok import run_with_ngrok
-from flask_restful import Api
+from flask_restful import Api, abort
 from werkzeug.utils import redirect
+
+from data.dialogues import Dialogue
 from forms.dialogue_form import DialogueForm
 from forms.edit_profile_form import EditProfileForm
 from forms.login_form import LoginForm
 from data import db_session
+from forms.message_form import MessageForm
 from forms.news_form import NewsForm
 from forms.reg_form import RegisterForm
 from resources.news_resource import NewsResource, NewsListResource
@@ -27,6 +30,7 @@ app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 api = Api(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
+PORT = None
 
 
 @login_manager.user_loader
@@ -36,9 +40,34 @@ def load_user(user_id):
     return session.query(User).get(user_id)
 
 
+@login_required
+def get_dialogues():
+    """Функция для получения диалогов пользователя."""
+    session = db_session.create_session()
+    dialogues = session.query(User).get(current_user.id).dialogues
+    return dialogues
+
+
+@login_required
+def get_messages(dialogue_id):
+    """Функция для получения сообщений диалога."""
+    session = db_session.create_session()
+    messages = session.query(Dialogue).get(dialogue_id).messages
+    return messages
+
+
+@login_required
+def get_users(dialogue_id):
+    """Функция для получения участников диалога."""
+    session = db_session.create_session()
+    users = session.query(Dialogue).get(dialogue_id).users
+    return users
+
+
 def main():
     """Главная функция. Устанавливает соединение с базой данных.
     Подсоединяет ресурсы. Запускает приложение."""
+    global PORT
     db_session.global_init('db/data.sqlite')
 
     api.add_resource(UsersResource, '/api_users/<int:user_id>')
@@ -50,8 +79,8 @@ def main():
     api.add_resource(NewsResource, '/api_news/<int:news_id>')
     api.add_resource(NewsListResource, '/api_news')
 
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='127.0.0.1', port=port)
+    PORT = int(os.environ.get("PORT", 5000))
+    app.run(host='127.0.0.1', port=PORT)
 
 
 @app.errorhandler(404)
@@ -83,7 +112,7 @@ def register():
     """Страница регистрации пользователя."""
     form = RegisterForm()
     if form.validate_on_submit():
-        res = requests.post('http://127.0.0.1:5000/api_users', json={
+        res = requests.post(f'http://localhost:{PORT}/api_users', json={
             'login': form.login.data,
             'name': form.name.data,
             'surname': form.surname.data,
@@ -130,7 +159,7 @@ def profile():
     """Страница профиля пользователя."""
     form = NewsForm()
     if form.validate_on_submit():
-        res = requests.post('http://127.0.0.1:5000/api_news', json={
+        res = requests.post(f'http://localhost:{PORT}/api_news', json={
             'content': form.content.data,
             'is_private': form.is_private.data,
             'user_id': current_user.id
@@ -149,7 +178,7 @@ def edit_profile():
     form = EditProfileForm()
     if form.validate_on_submit():
         if current_user.check_password(form.password.data):
-            res = requests.put(f'http://127.0.0.1:5000/api_users/{current_user.id}', json={
+            res = requests.put(f'http://localhost:{PORT}/api_users/{current_user.id}', json={
                 'login': current_user.login,
                 'name': form.name.data,
                 'surname': form.surname.data,
@@ -175,7 +204,7 @@ def edit_profile():
 @login_required
 def dialogues():
     """Страница пользователя с диалогами."""
-    return render_template('dialogues.html', title='Диалоги', dialogues=current_user.dialogues)
+    return render_template('dialogues.html', title='Диалоги', dialogues=get_dialogues())
 
 
 @app.route('/new_dialogue', methods=['GET', 'POST'])
@@ -183,19 +212,38 @@ def dialogues():
 def new_dialogue():
     """Страница для создания нового диалога."""
     form = DialogueForm()
-    users = requests.get('http://127.0.0.1:5000/api_users').json()['users']
+    users = requests.get(f'http://localhost:{PORT}/api_users').json()['users']
     form.members.choices = [(user['id'], f'{user["name"]} {user["surname"]}') for user
                             in users if user['login'] != current_user.login]
     if form.validate_on_submit():
-        res = requests.post('http://127.0.0.1:5000/api_dialogues', json={
+        if len(form.members.data) == 1:
+            user = list(filter(lambda x: x['id'] == form.members.data[0], users))[0]
+            form.name.data = f'{user["name"]} {user["surname"]}'
+        elif not form.name.data:
+            return render_template('/new_dialogue.html', title='Новый диалог', form=form,
+                                   message='Введите название беседы', dialogues=get_dialogues())
+        res = requests.post(f'http://localhost:{PORT}/api_dialogues', json={
             'name': form.name.data,
-            'members': form.members.data
+            'members': form.members.data + [current_user.id]
         }).json()
         if 'success' in res:
             return redirect('/dialogues')
         return render_template('/new_dialogue.html', title='Новый диалог', form=form,
-                               message=res['message'])
-    return render_template('new_dialogue.html', title='Новый диалог', form=form)
+                               message=res['message'], dialogues=get_dialogues())
+    return render_template('new_dialogue.html', title='Новый диалог', form=form,
+                           dialogues=get_dialogues())
+
+
+@app.route('/dialogue/<int:dialogue_id>')
+@login_required
+def get_dialogue(dialogue_id):
+    """Страница для получения сообщений диалога"""
+    dialogue = requests.get(f'http://localhost:{PORT}/api_dialogues/{dialogue_id}').json()
+    if 'message' in dialogue:
+        abort(404)
+    messages = get_messages(dialogue['id'])
+    users = get_users(dialogue['id'])
+    form = MessageForm()
 
 
 @app.route('/settings')
