@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container-fluid">
+<div class="container-fluid shadow-sm rounded" style="background-color: #F0F0F0;">
     <br>
     <div class="row">
         <div class="col-4">
@@ -10,51 +10,56 @@
                 <div class="row" style="min-height: 55px;">
                     <a href="/dialogue/{{ dialogue.id }}" class="col-10"
                        style="text-decoration: none;">
+                        {% if dialogue.name %}
                         <h5>{{ dialogue.name }}</h5>
+                        {% else %}
+                        {% for user in users[dialogue.id] if user.login != current_user.login %}
+                        <h5>{{ user.name }} {{ user.surname }}</h5>
+                        {% endfor %}
+                        {% endif %}
                     </a>
                     <div class="col-2">
                         <button type="button" class="close align-middle" aria-label="Close"
-                                data-toggle="modal" data-target="#deleteDialogueModal">
+                                data-toggle="modal" data-target="#deleteDialogueModal{{ dialogue.id }}">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
                 </div>
             </div>
             <br>
+
+            <div class="modal fade" id="deleteDialogueModal{{ dialogue.id }}" tabindex="-1" role="dialog"
+                 aria-labelledby="deleteDialogueModalTitle{{ dialogue.id }}"
+                 aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="deleteDialogueModalTitle{{ dialogue.id }}">Удалить беседу</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            Вы выйдете из беседы и сообщения удалятся.
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
+                            <a class="btn btn-primary" href="/delete_dialogue/{{ dialogue.id }}">Удалить</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
             {% endfor %}
         </div>
         <div class="col-8">
             {% block messages %}
             <div class="container-fluid align-middle" align="center">
-                </a><img src="static/img/icons/chat_icon.png">
+                </a><img src="{{ url_for('static', filename='chat_icon.png') }}">
                 <h5 class="nav-link" style="color: gray;">Пожалуйста, выберите беседу или <a
                         href="/new_dialogue">создайте новую</a>
                 </h5>
             </div>
             {% endblock %}
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block modal %}
-<div class="modal fade" id="deleteDialogueModal" tabindex="-1" role="dialog" aria-labelledby="deleteDialogueModalTitle"
-     aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="deleteDialogueModalTitle">Удалить беседу</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                Вы выйдете из беседы и сообщения удалятся.
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
-                <a class="btn btn-primary" href="/delete_dialogue">Удалить</a>
-            </div>
         </div>
     </div>
 </div>

@@ -3,9 +3,9 @@
 # Импорты необходимых библиотек, классов и функций
 import os
 import requests
-from flask import Flask, render_template, request
+from flask import Flask, render_template
 from flask_login import LoginManager, login_user, current_user, logout_user, login_required
-from flask_ngrok import run_with_ngrok
+# from flask_ngrok import run_with_ngrok
 from flask_restful import Api, abort
 from werkzeug.utils import redirect
 
@@ -80,7 +80,8 @@ def main():
     api.add_resource(NewsListResource, '/api_news')
 
     PORT = int(os.environ.get("PORT", 5000))
-    app.run(host='127.0.0.1', port=PORT)
+    host = '127.0.0.1'
+    app.run(host=host, port=PORT)
 
 
 @app.errorhandler(404)
@@ -166,9 +167,10 @@ def profile():
         }).json()
         if 'message' in res:
             return render_template('profile.html', title=f'{current_user.name} {current_user.surname}', form=form,
-                                   message=res['message'])
+                                   message=res['message'], news=current_user.news)
         return redirect('/profile')
-    return render_template('profile.html', title=f'{current_user.name} {current_user.surname}', form=form)
+    return render_template('profile.html', title=f'{current_user.name} {current_user.surname}', form=form,
+                           news=current_user.news)
 
 
 @app.route('/edit_profile', methods=['GET', 'POST'])
@@ -204,7 +206,11 @@ def edit_profile():
 @login_required
 def dialogues():
     """Страница пользователя с диалогами."""
-    return render_template('dialogues.html', title='Диалоги', dialogues=get_dialogues())
+    users = {}
+    dialogues = get_dialogues()
+    for dialogue in dialogues:
+        users[dialogue.id] = get_users(dialogue.id)
+    return render_template('dialogues.html', title='Диалоги', dialogues=dialogues, users=users)
 
 
 @app.route('/new_dialogue', methods=['GET', 'POST'])
@@ -217,8 +223,7 @@ def new_dialogue():
                             in users if user['login'] != current_user.login]
     if form.validate_on_submit():
         if len(form.members.data) == 1:
-            user = list(filter(lambda x: x['id'] == form.members.data[0], users))[0]
-            form.name.data = f'{user["name"]} {user["surname"]}'
+            form.name.data = ''
         elif not form.name.data:
             return render_template('/new_dialogue.html', title='Новый диалог', form=form,
                                    message='Введите название беседы', dialogues=get_dialogues())
@@ -234,16 +239,47 @@ def new_dialogue():
                            dialogues=get_dialogues())
 
 
-@app.route('/dialogue/<int:dialogue_id>')
+@app.route('/dialogue/<int:dialogue_id>', methods=['GET', 'POST'])
 @login_required
 def get_dialogue(dialogue_id):
     """Страница для получения сообщений диалога"""
-    dialogue = requests.get(f'http://localhost:{PORT}/api_dialogues/{dialogue_id}').json()
-    if 'message' in dialogue:
-        abort(404)
-    messages = get_messages(dialogue['id'])
-    users = get_users(dialogue['id'])
+    session = db_session.create_session()
+    dialogue = session.query(Dialogue).get(dialogue_id)
+    if not dialogue:
+        abort(505)
+    users = {}
+    dialogues = get_dialogues()
+    for dialogue in dialogues:
+        users[dialogue.id] = get_users(dialogue.id)
+    dialogue_messages = get_messages(dialogue.id)
+    dialogue_users = get_users(dialogue.id)
     form = MessageForm()
+    if form.validate_on_submit():
+        res = requests.post(f'http://localhost:{PORT}/api_messages', json={
+            'text': form.text.data,
+            'user_id': current_user.id,
+            'dialogue_id': dialogue.id
+        }).json()
+        if 'success' in res:
+            return redirect(f'/dialogue/{dialogue.id}')
+        abort(500)
+    return render_template('dialogue.html', title='Диалоги', dialogue_messages=dialogue_messages,
+                           dialogue_users=dialogue_users, users=users,
+                           dialogue=dialogue, form=form, dialogues=dialogues)
+
+
+@app.route('/delete_dialogue/<int:dialogue_id>')
+@login_required
+def delete_dialogue(dialogue_id):
+    """Страница для удаления диалога."""
+    session = db_session.create_session()
+    user = session.query(User).get(current_user.id)
+    for dialogue in user.dialogues:
+        if dialogue.id == dialogue_id:
+            user.dialogues.remove(dialogue)
+            session.commit()
+            break
+    return redirect('/dialogues')
 
 
 @app.route('/settings')

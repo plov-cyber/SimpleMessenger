@@ -13,7 +13,8 @@
 <nav class="navbar navbar-expand-lg navbar-light bg-info">
     <div class="container-fluid">
         <a class="navbar-brand" href="/">
-            <img src="static/img/icons/sm_icon.png" style="float: left" width="50" height="50" alt="">
+            <img src="{{ url_for('static', filename='sm_icon.png') }}" style="float: left" width="50" height="50"
+                 alt="">
             <h1 style="color: #3460DB;">SimpleMessenger</h1>
         </a>
 
@@ -50,21 +51,21 @@
                 <tbody>
                 <tr>
                     <th>
-                        <img src="static/img/icons/home_icon.png" width="30" height="30">
+                        <img src="{{ url_for('static', filename='home_icon.png') }}" width="30" height="30">
                         <a href="/profile" class="btn btn-outline-info" role="button">
                             Моя страница
                         </a>
                     </th>
                 </tr>
                 <tr>
-                    <th><img src="static/img/icons/news_icon.png" width="30" height="30">
+                    <th><img src="{{ url_for('static', filename='news_icon.png') }}" width="30" height="30">
                         <a href="/news" class="btn btn-outline-info" role="button">
                             Новости
                         </a>
                     </th>
                 </tr>
                 <tr>
-                    <th><img src="static/img/icons/msg_icon.png" width="30" height="30">
+                    <th><img src="{{ url_for('static', filename='msg_icon.png') }}" width="30" height="30">
                         <a href="/dialogues" class="btn btn-outline-info" role="button">
                             Сообщения
                         </a>
@@ -73,7 +74,7 @@
                 </tbody>
             </table>
         </div>
-        <div class="col-9 shadow-sm rounded" style="background-color: #F0F0F0;">
+        <div class="col-9">
             {% block content %}{% endblock %}
         </div>
     </div>
@@ -82,7 +83,6 @@
 {% block forms %}{% endblock %}
 {% endif %}
 
-{% block modal %}{% endblock %}
 
 <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
         integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
