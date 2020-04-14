@@ -80,8 +80,7 @@ def main():
     api.add_resource(NewsListResource, '/api_news')
 
     PORT = int(os.environ.get("PORT", 5000))
-    host = '127.0.0.1'
-    app.run()
+    app.run('0.0.0.0', port=PORT)
 
 
 @app.errorhandler(404)
