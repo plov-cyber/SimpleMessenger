@@ -1,5 +1,3 @@
-"""Класс Сообщения"""
-
 # Импорты необходимых библиотек, классов и функций
 from datetime import datetime
 import sqlalchemy
@@ -9,6 +7,7 @@ from .db_session import SqlAlchemyBase
 
 
 class Message(SqlAlchemyBase, SerializerMixin):
+    """Класс Сообщения"""
     __tablename__ = 'messages'
 
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, autoincrement=True)

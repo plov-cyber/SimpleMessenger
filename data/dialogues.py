@@ -1,5 +1,3 @@
-"""Класс Диалога"""
-
 # Импорты необходимых библиотек, классов и функций
 import sqlalchemy
 from sqlalchemy import orm
@@ -15,10 +13,12 @@ user_to_dialogue = sqlalchemy.Table('user_to_dialogue', SqlAlchemyBase.metadata,
 
 
 class Dialogue(SqlAlchemyBase, SerializerMixin):
+    """Класс Диалога"""
     __tablename__ = 'dialogues'
 
-    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, autoincrement=True)
-    name = sqlalchemy.Column(sqlalchemy.String, nullable=False, index=True)
+    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, autoincrement=True, index=True)
+    name = sqlalchemy.Column(sqlalchemy.String, nullable=False)
+    members = sqlalchemy.Column(sqlalchemy.String, nullable=False)
     messages = orm.relation('Message', back_populates='dialogue')
 
     def __repr__(self):

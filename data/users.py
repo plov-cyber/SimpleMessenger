@@ -1,5 +1,3 @@
-"""Класс Пользователя"""
-
 # Импорты необходимых библиотек, классов и функций
 import sqlalchemy
 from flask_login import UserMixin
@@ -10,6 +8,7 @@ from .db_session import SqlAlchemyBase
 
 
 class User(SqlAlchemyBase, UserMixin, SerializerMixin):
+    """Класс Пользователя"""
     __tablename__ = 'users'
 
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, autoincrement=True, index=True)

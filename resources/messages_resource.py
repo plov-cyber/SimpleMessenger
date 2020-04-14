@@ -1,6 +1,5 @@
 # Импорты необходимых библиотек, классов и функций
 from flask import jsonify
-from flask_login import current_user
 from flask_restful import abort, Resource
 from data.dialogues import Dialogue
 from data import db_session
@@ -88,14 +87,6 @@ class MessagesListResource(Resource):
             user_id=args['user_id'],
             dialogue_id=args['dialogue_id'],
         )
-        abort_if_user_not_found(args['user_id'])
-        user = session.query(User).get(args['user_id'])
-        user.messages.append(message)
-        session.merge(user)
-        abort_if_dialogue_not_found(args['dialogue_id'])
-        dialogue = session.query(Dialogue).get(args['dialogue_id'])
-        dialogue.messages.append(message)
-        session.merge(dialogue)
         session.add(message)
         session.commit()
         return jsonify({'success': 'OK'})

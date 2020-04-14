@@ -1,6 +1,5 @@
 # Импорты необходимых библиотек, классов и функций
 from flask import jsonify
-from flask_login import current_user
 from flask_restful import abort, Resource
 from data.users import User
 from data import db_session
@@ -22,14 +21,14 @@ def abort_if_dialogue_not_found(dialogue_id):
         abort(404, message=f"Диалог {dialogue_id} не найден")
 
 
-def abort_if_dialogue_already_exists(name, members):
-    """Функция проверки существования диалога.
-                Ошибка, если диалог уже существует."""
+def check_if_dialogue_already_exists(name, members):
+    """Функция проверки существования диалога."""
     session = db_session.create_session()
-    dialogue = session.query(Dialogue).filter(Dialogue.name == name).first()
-    if dialogue and members == [user.id for user in dialogue.users]:
-        abort(404, message=f"Диалог с именем:'{name}' и "
-                           f"участниками:'{[user.name for user in dialogue.users]}' уже существует")
+    dialogues = session.query(Dialogue).filter(Dialogue.name == name).all()
+    for dialogue in dialogues:
+        if sorted(members) == sorted([user.id for user in dialogue.users]):
+            return True
+    return False
 
 
 def abort_if_user_not_found(user_id):
@@ -50,7 +49,7 @@ class DialoguesResource(Resource):
         abort_if_dialogue_not_found(dialogue_id)
         session = db_session.create_session()
         dialogue = session.query(Dialogue).get(dialogue_id)
-        return jsonify({'dialogue': dialogue.to_dict(only=['id', 'name'])})
+        return jsonify({'dialogue': dialogue.to_dict(only=['id', 'name', 'members'])})
 
     def delete(self, dialogue_id):
         """Удалить диалог"""
@@ -71,17 +70,34 @@ class DialoguesListResource(Resource):
 
         session = db_session.create_session()
         dialogues = session.query(Dialogue).all()
-        return jsonify({'dialogues': [item.to_dict(only=['id', 'name']) for item in dialogues]})
+        return jsonify({'dialogues': [item.to_dict(only=['id', 'name', 'members']) for item in dialogues]})
 
     def post(self):
         """Добавить новый диалог"""
 
         args = parser.parse_args()
-        abort_if_dialogue_already_exists(args['name'], args['members'])
         session = db_session.create_session()
+        if check_if_dialogue_already_exists(args['name'], args['members']):
+            dialogues = session.query(Dialogue).filter(Dialogue.name == args['name']).all()
+            for d in dialogues:
+                if sorted([user.id for user in d.users]) == sorted(args['members']):
+                    dialogue = d
+                    break
+            user = [u for u in dialogue.users if str(u.id) not in dialogue.members.split(', ')]
+            if not user:
+                if len(args['members']) == 2:
+                    abort(404, message='Диалог уже существует')
+                else:
+                    abort(404, message='Беседа уже существует')
+            user = user[0]
+            dialogue.members += ', ' + str(user.id)
+            session.merge(dialogue)
+            session.commit()
+            return jsonify({'success': 'OK'})
         # noinspection PyArgumentList
         dialogue = Dialogue(
-            name=args['name']
+            name=args['name'],
+            members=', '.join(list(map(str, args['members'])))
         )
         for user_id in args['members']:
             abort_if_user_not_found(user_id)

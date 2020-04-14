@@ -6,6 +6,8 @@ from data import db_session
 from data.news import News
 
 # Парсер аргументов
+from data.users import User
+
 parser = reqparse.RequestParser()
 parser.add_argument('content', required=True)
 parser.add_argument('is_private', type=bool, required=True)
@@ -64,9 +66,6 @@ class NewsListResource(Resource):
             user_id=args['user_id'],
             is_private=args['is_private']
         )
-        if current_user.is_authenticated:
-            current_user.news.append(news)
-            session.merge(current_user)
         session.add(news)
         session.commit()
         return jsonify({'success': 'OK'})

@@ -1,5 +1,18 @@
 {% extends "dialogues.html" %}
 
+{% block script %}
+<script type="text/javascript">
+    setInterval(function() {
+        $.getJSON($SCRIPT_ROOT + '/get_messages', {
+            dialogue_id: {{ dialogue.id }}
+        }, function(data) {
+            $("#messages").html(data.messages)
+        });
+        return false;
+    }, 1000);
+</script>
+{% endblock %}
+
 {% block messages %}
 <div class="container-fluid">
     <div class="row rounded" style="background-color: #C4EAFF;">
@@ -13,7 +26,7 @@
     </div>
     <br>
     <div class="row rounded" style="background-color: white;">
-        <div class="container-fluid" style="width: 100%; overflow: auto; height: 500px;">
+        <div class="container-fluid" style="width: 100%; overflow: auto; height: 500px;" id="messages">
             {% for message in dialogue_messages %}
             {% for user in dialogue_users if user.id == message.user_id %}
             {% if user.login == current_user.login %}
@@ -22,6 +35,7 @@
                 <div class="col-6 rounded" style="background-color: #EDEDED">
                     <div style="width: 100%;">
                         <strong>{{ user.name }}{{ user.surname }}</strong>
+                        <small>{{ message.send_date|string|truncate(16, True, '')}}</small>
                     </div>
                     <div>
                         {{ message.text }}
@@ -33,6 +47,7 @@
                 <div class="col-6 rounded" style="background-color: #EDEDED">
                     <div style="width: 100%;">
                         <strong>{{ user.name }}{{ user.surname }}</strong>
+                        <small>{{ message.send_date|string|truncate(16, True, '') }}</small>
                     </div>
                     <div>
                         {{ message.text }}

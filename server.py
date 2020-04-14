@@ -3,9 +3,9 @@
 # Импорты необходимых библиотек, классов и функций
 import os
 import requests
-from flask import Flask, render_template
+from flask import Flask, render_template, request, make_response, jsonify
 from flask_login import LoginManager, login_user, current_user, logout_user, login_required
-# from flask_ngrok import run_with_ngrok
+from flask_ngrok import run_with_ngrok
 from flask_restful import Api, abort
 from werkzeug.utils import redirect
 
@@ -44,8 +44,8 @@ def load_user(user_id):
 def get_dialogues():
     """Функция для получения диалогов пользователя."""
     session = db_session.create_session()
-    dialogues = session.query(User).get(current_user.id).dialogues
-    return dialogues
+    user = session.query(User).get(current_user.id)
+    return [dialogue for dialogue in user.dialogues if str(user.id) in dialogue.members.split(', ')]
 
 
 @login_required
@@ -81,7 +81,7 @@ def main():
 
     PORT = int(os.environ.get("PORT", 5000))
     host = '127.0.0.1'
-    app.run(host=host, port=PORT)
+    app.run()
 
 
 @app.errorhandler(404)
@@ -221,12 +221,17 @@ def new_dialogue():
     users = requests.get(f'http://localhost:{PORT}/api_users').json()['users']
     form.members.choices = [(user['id'], f'{user["name"]} {user["surname"]}') for user
                             in users if user['login'] != current_user.login]
+    users = {}
+    dialogues = get_dialogues()
+    for dialogue in dialogues:
+        users[dialogue.id] = get_users(dialogue.id)
     if form.validate_on_submit():
         if len(form.members.data) == 1:
             form.name.data = ''
         elif not form.name.data:
             return render_template('/new_dialogue.html', title='Новый диалог', form=form,
-                                   message='Введите название беседы', dialogues=get_dialogues())
+                                   message='Введите название беседы', dialogues=dialogues,
+                                   users=users)
         res = requests.post(f'http://localhost:{PORT}/api_dialogues', json={
             'name': form.name.data,
             'members': form.members.data + [current_user.id]
@@ -234,9 +239,10 @@ def new_dialogue():
         if 'success' in res:
             return redirect('/dialogues')
         return render_template('/new_dialogue.html', title='Новый диалог', form=form,
-                               message=res['message'], dialogues=get_dialogues())
+                               message=res['message'], dialogues=dialogues,
+                               users=users)
     return render_template('new_dialogue.html', title='Новый диалог', form=form,
-                           dialogues=get_dialogues())
+                           dialogues=dialogues, users=users)
 
 
 @app.route('/dialogue/<int:dialogue_id>', methods=['GET', 'POST'])
@@ -268,6 +274,47 @@ def get_dialogue(dialogue_id):
                            dialogue=dialogue, form=form, dialogues=dialogues)
 
 
+@app.route('/get_messages', methods=['GET', 'POST'])
+def update_messages():
+    dialogue_id = request.args.get('dialogue_id')
+    messages = get_messages(int(dialogue_id))
+    res = {
+        'messages': None
+    }
+    users = get_users(dialogue_id)
+    html = ''
+    for message in messages:
+        user = [user for user in users if user.id == message.user_id][0]
+        if user.login == current_user.login:
+            html += f"""<div class="row" style="margin: 5px 5px 5px 0px;">
+                            <div class="col-6"></div>
+                            <div class="col-6 rounded" style="background-color: #EDEDED">
+                                <div style="width: 100%;">
+                                    <strong>{user.name}{user.surname}</strong>
+                                    <small>{str(message.send_date)[:16]}</small>
+                                </div>
+                                <div>
+                                    {message.text}
+                                </div>
+                            </div>
+                        </div>\n"""
+        else:
+            html += f"""<div class="row" style="margin: 5px 5px 5px 0px;">
+                            <div class="col-6 rounded" style="background-color: #EDEDED">
+                                <div style="width: 100%;">
+                                    <strong>{user.name}{user.surname}</strong>
+                                    <small>{str(message.send_date)[:16]}</small>
+                                </div>
+                                <div>
+                                    {message.text}
+                                </div>
+                            </div>
+                            <div class="col-6"></div>
+                        </div>\n"""
+    res['messages'] = html
+    return jsonify(res)
+
+
 @app.route('/delete_dialogue/<int:dialogue_id>')
 @login_required
 def delete_dialogue(dialogue_id):
@@ -276,7 +323,17 @@ def delete_dialogue(dialogue_id):
     user = session.query(User).get(current_user.id)
     for dialogue in user.dialogues:
         if dialogue.id == dialogue_id:
-            user.dialogues.remove(dialogue)
+            true_dialogue = session.query(Dialogue).get(dialogue_id)
+            true_dialogue.members = ', '.join([member for member in
+                                               true_dialogue.members.split(', ')
+                                               if int(member) != user.id])
+            if true_dialogue.members == '':
+                for message in true_dialogue.messages:
+                    session.delete(message)
+                session.delete(dialogue)
+                session.commit()
+                break
+            session.merge(true_dialogue)
             session.commit()
             break
     return redirect('/dialogues')

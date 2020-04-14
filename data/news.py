@@ -1,5 +1,3 @@
-"""Класс Новости"""
-
 # Импорты необходимых библиотек, классов и функций
 import datetime
 import sqlalchemy
@@ -10,6 +8,7 @@ from .db_session import SqlAlchemyBase
 
 
 class News(SqlAlchemyBase, SerializerMixin):
+    """Класс Новости"""
     __tablename__ = 'news'
 
     id = sqlalchemy.Column(sqlalchemy.Integer,
