@@ -276,6 +276,7 @@ def get_dialogue(dialogue_id):
 
 @app.route('/get_messages', methods=['GET', 'POST'])
 def update_messages():
+    """Функиця для обновления сообшений в диалоге."""
     dialogue_id = request.args.get('dialogue_id')
     messages = get_messages(int(dialogue_id))
     res = {
