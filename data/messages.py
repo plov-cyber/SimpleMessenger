@@ -17,6 +17,3 @@ class Message(SqlAlchemyBase, SerializerMixin):
     dialogue_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey('dialogues.id'), nullable=False)
     user = orm.relation('User')
     dialogue = orm.relation('Dialogue')
-
-    def __repr__(self):
-        return f"Message #{self.id} '{self.text}'"

@@ -20,7 +20,7 @@ def abort_if_news_not_found(news_id):
     session = db_session.create_session()
     news = session.query(News).get(news_id)
     if not news:
-        abort(404, message=f"Новость {news_id} не найдена")
+        abort(404, message="Новость {} не найдена".format(news_id))
 
 
 class NewsResource(Resource):

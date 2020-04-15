@@ -112,7 +112,7 @@ def register():
     """Страница регистрации пользователя."""
     form = RegisterForm()
     if form.validate_on_submit():
-        res = requests.post(f'http://localhost:{PORT}/api_users', json={
+        res = requests.post('http://localhost:{}/api_users'.format(PORT), json={
             'login': form.login.data,
             'name': form.name.data,
             'surname': form.surname.data,
@@ -159,7 +159,7 @@ def profile():
     """Страница профиля пользователя."""
     form = NewsForm()
     if form.validate_on_submit():
-        res = requests.post(f'http://localhost:{PORT}/api_news', json={
+        res = requests.post('http://localhost:{}/api_news'.format(PORT), json={
             'content': form.content.data,
             'is_private': form.is_private.data,
             'user_id': current_user.id
@@ -179,7 +179,7 @@ def edit_profile():
     form = EditProfileForm()
     if form.validate_on_submit():
         if current_user.check_password(form.password.data):
-            res = requests.put(f'http://localhost:{PORT}/api_users/{current_user.id}', json={
+            res = requests.put('http://localhost:{}/api_users/{}'.format(PORT, current_user.id), json={
                 'login': current_user.login,
                 'name': form.name.data,
                 'surname': form.surname.data,
@@ -217,8 +217,8 @@ def dialogues():
 def new_dialogue():
     """Страница для создания нового диалога."""
     form = DialogueForm()
-    users = requests.get(f'http://localhost:{PORT}/api_users').json()['users']
-    form.members.choices = [(user['id'], f'{user["name"]} {user["surname"]}') for user
+    users = requests.get('http://localhost:{}/api_users'.format(PORT)).json()['users']
+    form.members.choices = [(user['id'], '{} {}'.format(user['name'], user['surname'])) for user
                             in users if user['login'] != current_user.login]
     users = {}
     dialogues = get_dialogues()
@@ -231,7 +231,7 @@ def new_dialogue():
             return render_template('/new_dialogue.html', title='Новый диалог', form=form,
                                    message='Введите название беседы', dialogues=dialogues,
                                    users=users)
-        res = requests.post(f'http://localhost:{PORT}/api_dialogues', json={
+        res = requests.post('http://localhost:{}/api_dialogues'.format(PORT), json={
             'name': form.name.data,
             'members': form.members.data + [current_user.id]
         }).json()
@@ -260,13 +260,13 @@ def get_dialogue(dialogue_id):
     dialogue_users = get_users(dialogue.id)
     form = MessageForm()
     if form.validate_on_submit():
-        res = requests.post(f'http://localhost:{PORT}/api_messages', json={
+        res = requests.post('http://localhost:{}/api_messages'.format(PORT), json={
             'text': form.text.data,
             'user_id': current_user.id,
             'dialogue_id': dialogue.id
         }).json()
         if 'success' in res:
-            return redirect(f'/dialogue/{dialogue.id}')
+            return redirect('/dialogue/{}'.format(dialogue.id))
         abort(500)
     return render_template('dialogue.html', title='Диалоги', dialogue_messages=dialogue_messages,
                            dialogue_users=dialogue_users, users=users,
@@ -286,31 +286,31 @@ def update_messages():
     for message in messages:
         user = [user for user in users if user.id == message.user_id][0]
         if user.login == current_user.login:
-            html += f"""<div class="row" style="margin: 5px 5px 5px 0px;">
+            html += """<div class="row" style="margin: 5px 5px 5px 0px;">
                             <div class="col-6"></div>
                             <div class="col-6 rounded" style="background-color: #EDEDED">
                                 <div style="width: 100%;">
-                                    <strong>{user.name}{user.surname}</strong>
-                                    <small>{str(message.send_date)[:16]}</small>
+                                    <strong>{}{}</strong>
+                                    <small>{}</small>
                                 </div>
                                 <div>
-                                    {message.text}
+                                    {}
                                 </div>
                             </div>
-                        </div>\n"""
+                        </div>\n""".format(user.name, user.surname, str(message.send_date)[:16], message.text)
         else:
-            html += f"""<div class="row" style="margin: 5px 5px 5px 0px;">
+            html += """<div class="row" style="margin: 5px 5px 5px 0px;">
                             <div class="col-6 rounded" style="background-color: #EDEDED">
                                 <div style="width: 100%;">
-                                    <strong>{user.name}{user.surname}</strong>
-                                    <small>{str(message.send_date)[:16]}</small>
+                                    <strong>{}{}</strong>
+                                    <small>{}</small>
                                 </div>
                                 <div>
-                                    {message.text}
+                                    {}
                                 </div>
                             </div>
                             <div class="col-6"></div>
-                        </div>\n"""
+                        </div>\n""".format(user.name, user.surname, str(message.send_date)[:16], message.text)
     res['messages'] = html
     return jsonify(res)
 

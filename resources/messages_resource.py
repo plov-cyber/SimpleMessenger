@@ -21,16 +21,16 @@ def abort_if_message_not_found(message_id):
     session = db_session.create_session()
     message = session.query(Message).get(message_id)
     if not message:
-        abort(404, message=f"Сообщение {message_id} не найдено")
+        abort(404, message="Сообщение {} не найдено".format(message_id))
 
 
 def abort_if_dialogue_not_found(dialogue_id):
     """Функция проверки существования диалога.
-                Ошибка, если диалог не найден."""
+            Ошибка, если диалог не найден."""
     session = db_session.create_session()
     dialogue = session.query(Dialogue).get(dialogue_id)
     if not dialogue:
-        abort(404, message=f"Диалог {dialogue_id} не найден")
+        abort(404, message="Диалог {} не найден".format(dialogue_id))
 
 
 def abort_if_user_not_found(user_id):
@@ -39,7 +39,7 @@ def abort_if_user_not_found(user_id):
     session = db_session.create_session()
     user = session.query(User).get(user_id)
     if not user:
-        abort(404, message=f"Пользователь {user_id} не найден")
+        abort(404, message="Пользователь {} не найден".format(user_id))
 
 
 class MessagesResource(Resource):

@@ -20,6 +20,3 @@ class Dialogue(SqlAlchemyBase, SerializerMixin):
     name = sqlalchemy.Column(sqlalchemy.String, nullable=False)
     members = sqlalchemy.Column(sqlalchemy.String, nullable=False)
     messages = orm.relation('Message', back_populates='dialogue')
-
-    def __repr__(self):
-        return f"Dialogue #{self.id} '{self.name}'"

@@ -21,7 +21,7 @@ def abort_if_user_not_found(user_id):
     session = db_session.create_session()
     user = session.query(User).get(user_id)
     if not user:
-        abort(404, message=f"Пользователь {user_id} не найден")
+        abort(404, message="Пользователь {} не найден".format(user_id))
 
 
 def abort_if_user_already_exists(user_login):
@@ -30,13 +30,13 @@ def abort_if_user_already_exists(user_login):
     session = db_session.create_session()
     user = session.query(User).filter(User.login == user_login).first()
     if user:
-        abort(404, message=f"Пользователь с логином: '{user_login}' уже существует")
+        abort(404, message="Пользователь с логином: '{}' уже существует".format(user_login))
 
 
 def abort_if_age_neg(age):
     """Функция проверки возраста на отрицательность."""
     if age < 0:
-        abort(404, message=f'Возраст не может быть отрицательным')
+        abort(404, message='Возраст не может быть отрицательным')
 
 
 class UsersResource(Resource):
