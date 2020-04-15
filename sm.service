@@ -1,0 +1,13 @@
+[Unit]
+Description=Simple Messenger
+After=network.target
+
+[Service]
+User=plov-cyber
+Group=root
+
+WorkingDirectory=/home/plov-cyber/SimpleMessenger/
+ExecStart=python3 /home/plov-cyber/SimpleMessenger/server.py
+
+[Install]
+WantedBy=multi-user.target
