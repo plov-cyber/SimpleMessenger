@@ -11,6 +11,7 @@ from flask_restful import Api, abort
 from werkzeug.utils import redirect
 
 from data.dialogues import Dialogue
+from forms.change_pwd_form import NewPasswordForm
 from forms.dialogue_form import DialogueForm
 from forms.edit_profile_form import EditProfileForm
 from forms.login_form import LoginForm
@@ -203,6 +204,43 @@ def edit_profile():
     return render_template('profile_edit.html', title='Редактирование профиля', form=form)
 
 
+@app.route('/settings', methods=['GET', 'POST'])
+@login_required
+def settings():
+    """Страница настроек пользователя."""
+    form = NewPasswordForm()
+    if form.validate_on_submit():
+        if current_user.check_password(form.old_password.data):
+            if form.old_password.data != form.new_password.data:
+                res = requests.put('http://localhost:{}/api_users/{}'.format(PORT, current_user.id), json={
+                    'login': current_user.login,
+                    'name': current_user.name,
+                    'surname': current_user.surname,
+                    'age': current_user.age,
+                    'about': current_user.about,
+                    'password': form.new_password.data
+                }).json()
+                if 'success' in res:
+                    return render_template('settings.html', title='Настройки', form=form,
+                                           message='Пароль успешно изменён')
+                return render_template('settings.html', title='Настройки', form=form,
+                                       error=res['message'])
+            return render_template('settings.html', title='Настройки', form=form,
+                                   error='Старый и новый пароли совпадают!')
+        return render_template('settings.html', title='Настройки', form=form,
+                               error='Неверный пароль')
+    return render_template('settings.html', title='Настройки', form=form)
+
+
+@app.route('/delete_profile/<int:user_id>')
+@login_required
+def delete_profile(user_id):
+    res = requests.delete('http://localhost:{}/api_users/{}'.format(PORT, user_id)).json()
+    if 'success' in res:
+        return redirect('/logout')
+    abort(500)
+
+
 @app.route('/dialogues')
 @login_required
 def dialogues():
@@ -339,13 +377,6 @@ def delete_dialogue(dialogue_id):
             session.commit()
             break
     return redirect('/dialogues')
-
-
-@app.route('/settings')
-@login_required
-def settings():
-    """Страница настроек пользователя."""
-    return render_template('base.html', title='Настройки')
 
 
 @app.route('/news')

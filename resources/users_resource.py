@@ -58,6 +58,12 @@ class UsersResource(Resource):
         abort_if_user_not_found(user_id)
         session = db_session.create_session()
         user = session.query(User).get(user_id)
+        for news in user.news:
+            session.delete(news)
+            session.commit()
+        for message in user.messages:
+            session.delete(message)
+            session.commit()
         session.delete(user)
         session.commit()
         return jsonify({'success': 'OK'})
