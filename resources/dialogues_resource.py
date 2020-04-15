@@ -1,3 +1,4 @@
+# coding=utf-8
 # Импорты необходимых библиотек, классов и функций
 from flask import jsonify
 from flask_restful import abort, Resource
