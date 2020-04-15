@@ -7,7 +7,7 @@ User=plov-cyber
 Group=root
 
 WorkingDirectory=/home/plov-cyber/SimpleMessenger/
-ExecStart=python3 /home/plov-cyber/SimpleMessenger/server.py
+ExecStart=/usr/bin/python3.6 /home/plov-cyber/SimpleMessenger/server.py
 
 [Install]
 WantedBy=multi-user.target
