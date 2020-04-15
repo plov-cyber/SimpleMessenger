@@ -165,10 +165,11 @@ def profile():
             'user_id': current_user.id
         }).json()
         if 'message' in res:
-            return render_template('profile.html', title=f'{current_user.name} {current_user.surname}', form=form,
+            return render_template('profile.html', title='{} {}'.format(current_user.name, current_user.surname),
+                                   form=form,
                                    message=res['message'], news=current_user.news)
         return redirect('/profile')
-    return render_template('profile.html', title=f'{current_user.name} {current_user.surname}', form=form,
+    return render_template('profile.html', title='{} {}'.format(current_user.name, current_user.surname), form=form,
                            news=current_user.news)
 
 
