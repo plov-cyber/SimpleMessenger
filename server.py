@@ -4,9 +4,8 @@
 # Импорты необходимых библиотек, классов и функций
 import os
 import requests
-from flask import Flask, render_template, request, make_response, jsonify
+from flask import Flask, render_template, request, jsonify
 from flask_login import LoginManager, login_user, current_user, logout_user, login_required
-from flask_ngrok import run_with_ngrok
 from flask_restful import Api, abort
 from werkzeug.utils import redirect
 
@@ -27,7 +26,6 @@ from resources.messages_resource import MessagesResource, MessagesListResource
 
 # Создание приложения, API и менеджера авторизации
 app = Flask(__name__)
-# run_with_ngrok(app)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 api = Api(app)
 login_manager = LoginManager()
@@ -235,6 +233,7 @@ def settings():
 @app.route('/delete_profile/<int:user_id>')
 @login_required
 def delete_profile(user_id):
+    """Функция для удаления профиля пользователя."""
     res = requests.delete('http://localhost:{}/api_users/{}'.format(PORT, user_id)).json()
     if 'success' in res:
         return redirect('/logout')
@@ -314,6 +313,7 @@ def get_dialogue(dialogue_id):
 
 
 @app.route('/get_messages', methods=['GET', 'POST'])
+@login_required
 def update_messages():
     """Функиця для обновления сообшений в диалоге."""
     dialogue_id = request.args.get('dialogue_id')
@@ -327,29 +327,29 @@ def update_messages():
         user = [user for user in users if user.id == message.user_id][0]
         if user.login == current_user.login:
             html += """<div class="row" style="margin: 5px 5px 5px 0px;">
-                            <div class="col-6"></div>
-                            <div class="col-6 rounded" style="background-color: #EDEDED">
+                            <div class="col-4"></div>
+                            <div class="col-8 rounded" style="background-color: #EDEDED; text-align: right;">
                                 <div style="width: 100%;">
-                                    <strong>{}{}</strong>
                                     <small>{}</small>
+                                    <strong>{} {}</strong>
                                 </div>
                                 <div>
                                     {}
                                 </div>
                             </div>
-                        </div>\n""".format(user.name, user.surname, str(message.send_date)[:16], message.text)
+                        </div>\n""".format(str(message.send_date)[:16], user.name, user.surname, message.text)
         else:
-            html += """<div class="row" style="margin: 5px 5px 5px 0px;">
-                            <div class="col-6 rounded" style="background-color: #EDEDED">
+            html += """<div class="row" style="margin: 5px 0px 5px 5px;">
+                            <div class="col-8 rounded" style="background-color: #EDEDED; text-align: left;">
                                 <div style="width: 100%;">
-                                    <strong>{}{}</strong>
+                                    <strong>{} {}</strong>
                                     <small>{}</small>
                                 </div>
                                 <div>
                                     {}
                                 </div>
                             </div>
-                            <div class="col-6"></div>
+                            <div class="col-4"></div>
                         </div>\n""".format(user.name, user.surname, str(message.send_date)[:16], message.text)
     res['messages'] = html
     return jsonify(res)
@@ -384,6 +384,41 @@ def delete_dialogue(dialogue_id):
 def news():
     """Страница с новостями других пользователей."""
     return render_template('news.html', title='Новости')
+
+
+@app.route('/delete_news/<int:news_id>')
+@login_required
+def delete_news(news_id):
+    """Функция для удаления новости пользователя."""
+    res = requests.delete('http://localhost:{}/api_news/{}'.format(PORT, news_id)).json()
+    if 'success' in res:
+        return redirect(request.referrer)
+    abort(500)
+
+
+@app.route('/edit_news/<int:news_id>', methods=['GET', 'POST'])
+@login_required
+def edit_news(news_id):
+    """Страница для редактирования новости пользователя."""
+    form = NewsForm()
+    news = requests.get('http://localhost:{}/api_news/{}'.format(PORT, news_id)).json()
+    if 'news' not in news:
+        abort(500)
+    news = news['news']
+    if form.validate_on_submit():
+        res = requests.put('http://localhost:{}/api_news/{}'.format(PORT, news_id), json={
+            'content': form.content.data,
+            'is_private': form.is_private.data,
+            'user_id': current_user.id
+        }).json()
+        if 'success' in res:
+            return render_template('edit_news.html', title='Редактирование новости', form=form,
+                                   message='Изменения успешно сохранены')
+        return render_template('edit_news.html', title='Редактирование новости', form=form,
+                               error=res['message'])
+    form.content.data = news['content']
+    form.is_private.data = news['is_private']
+    return render_template('edit_news.html', title='Редактирование новости', form=form)
 
 
 if __name__ == '__main__':

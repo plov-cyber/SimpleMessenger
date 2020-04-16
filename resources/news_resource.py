@@ -45,6 +45,18 @@ class NewsResource(Resource):
         session.commit()
         return jsonify({'success': 'OK'})
 
+    def put(self, news_id):
+        """Редактировать новость"""
+
+        abort_if_news_not_found(news_id)
+        args = parser.parse_args()
+        session = db_session.create_session()
+        news = session.query(News).get(news_id)
+        news.content = args['content']
+        news.is_private = args['is_private']
+        session.commit()
+        return jsonify({'success': 'OK'})
+
 
 class NewsListResource(Resource):
     """Ресурс Новостей"""

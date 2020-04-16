@@ -3,7 +3,7 @@ Description=Simple Messenger
 After=network.target
 
 [Service]
-User=plov-cyber
+User=root
 Group=root
 
 WorkingDirectory=/home/plov-cyber/SimpleMessenger/
