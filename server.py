@@ -81,7 +81,7 @@ def main():
     api.add_resource(NewsResource, '/api_news/<int:news_id>')
     api.add_resource(NewsListResource, '/api_news')
 
-    PORT = int(os.environ.get("PORT", 5000))
+    PORT = int(os.environ.get("PORT", 80))
     app.run('0.0.0.0', port=PORT)
 
 
