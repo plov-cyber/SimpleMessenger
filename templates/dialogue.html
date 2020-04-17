@@ -30,9 +30,8 @@
             {% for message in dialogue_messages %}
             {% for user in dialogue_users if user.id == message.user_id %}
             {% if user.login == current_user.login %}
-            <div class="row" style="margin: 5px 5px 5px 0px;">
-                <div class="col-4"></div>
-                <div class="col-8 rounded" style="background-color: #EDEDED; text-align: right;">
+            <div class="row justify-content-end" style="margin: 5px 5px 5px 0px;">
+                <div class="col-md-auto rounded" style="background-color: #EDEDED; text-align: right;">
                     <div style="width: 100%;">
                         <small>{{ message.send_date|string|truncate(16, True, '')}}</small>
                         <strong>{{ user.name }} {{ user.surname }}</strong>
@@ -43,8 +42,8 @@
                 </div>
             </div>
             {% else %}
-            <div class="row" style="margin: 5px 0px 5px 5px;">
-                <div class="col-8 rounded" style="background-color: #EDEDED; text-align: left;">
+            <div class="row justify-content-start" style="margin: 5px 0px 5px 5px;">
+                <div class="col-md-auto rounded" style="background-color: #EDEDED; text-align: left;">
                     <div style="width: 100%;">
                         <strong>{{ user.name }} {{ user.surname }}</strong>
                         <small>{{ message.send_date|string|truncate(16, True, '') }}</small>
@@ -53,7 +52,6 @@
                         {{ message.text }}
                     </div>
                 </div>
-                <div class="col-4"></div>
             </div>
             {% endif %}
             {% endfor %}

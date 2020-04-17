@@ -6,10 +6,12 @@ import os
 import requests
 from flask import Flask, render_template, request, jsonify
 from flask_login import LoginManager, login_user, current_user, logout_user, login_required
+from flask_ngrok import run_with_ngrok
 from flask_restful import Api, abort
 from werkzeug.utils import redirect
 
 from data.dialogues import Dialogue
+from data.news import News
 from forms.change_pwd_form import NewPasswordForm
 from forms.dialogue_form import DialogueForm
 from forms.edit_profile_form import EditProfileForm
@@ -26,6 +28,7 @@ from resources.messages_resource import MessagesResource, MessagesListResource
 
 # Создание приложения, API и менеджера авторизации
 app = Flask(__name__)
+# run_with_ngrok(app)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 api = Api(app)
 login_manager = LoginManager()
@@ -64,6 +67,14 @@ def get_users(dialogue_id):
     return users
 
 
+@login_required
+def get_news():
+    """Функция для получения всех новостей."""
+    session = db_session.create_session()
+    news = session.query(News).all()
+    return news
+
+
 def main():
     """Главная функция. Устанавливает соединение с базой данных.
     Подсоединяет ресурсы. Запускает приложение."""
@@ -80,6 +91,7 @@ def main():
     api.add_resource(NewsListResource, '/api_news')
 
     PORT = int(os.environ.get("PORT", 80))
+    # '0.0.0.0', port=PORT
     app.run('0.0.0.0', port=PORT)
 
 
@@ -326,9 +338,8 @@ def update_messages():
     for message in messages:
         user = [user for user in users if user.id == message.user_id][0]
         if user.login == current_user.login:
-            html += """<div class="row" style="margin: 5px 5px 5px 0px;">
-                            <div class="col-4"></div>
-                            <div class="col-8 rounded" style="background-color: #EDEDED; text-align: right;">
+            html += """<div class="row justify-content-end" style="margin: 5px 5px 5px 0px;">
+                            <div class="col-md-auto rounded" style="background-color: #EDEDED; text-align: right;">
                                 <div style="width: 100%;">
                                     <small>{}</small>
                                     <strong>{} {}</strong>
@@ -339,8 +350,8 @@ def update_messages():
                             </div>
                         </div>\n""".format(str(message.send_date)[:16], user.name, user.surname, message.text)
         else:
-            html += """<div class="row" style="margin: 5px 0px 5px 5px;">
-                            <div class="col-8 rounded" style="background-color: #EDEDED; text-align: left;">
+            html += """<div class="row justify-content-start" style="margin: 5px 0px 5px 5px;">
+                            <div class="col-md-auto rounded" style="background-color: #EDEDED; text-align: left;">
                                 <div style="width: 100%;">
                                     <strong>{} {}</strong>
                                     <small>{}</small>
@@ -349,7 +360,6 @@ def update_messages():
                                     {}
                                 </div>
                             </div>
-                            <div class="col-4"></div>
                         </div>\n""".format(user.name, user.surname, str(message.send_date)[:16], message.text)
     res['messages'] = html
     return jsonify(res)
@@ -379,11 +389,34 @@ def delete_dialogue(dialogue_id):
     return redirect('/dialogues')
 
 
-@app.route('/news')
+@app.route('/news', methods=['GET', 'POST'])
 @login_required
-def news():
+def all_news():
     """Страница с новостями других пользователей."""
-    return render_template('news.html', title='Новости')
+    news = requests.get('http://localhost:{}/api_news'.format(PORT)).json()
+    if 'news' not in news:
+        abort(500)
+    news = news['news']
+    users = {}
+    for article in news:
+        user = requests.get('http://localhost:{}/api_users/{}'.format(PORT, article['user_id'])).json()
+        if 'user' not in user:
+            abort(500)
+        user = user['user']
+        users[article['id']] = '{} {}'.format(user['name'], user['surname'])
+    form = NewsForm()
+    if form.validate_on_submit():
+        res = requests.post('http://localhost:{}/api_news'.format(PORT), json={
+            'content': form.content.data,
+            'is_private': form.is_private.data,
+            'user_id': current_user.id
+        }).json()
+        if 'message' in res:
+            return render_template('news.html', title='Новости',
+                                   form=form, message=res['message'],
+                                   news=news, users=users)
+        return redirect('/news')
+    return render_template('news.html', title='Новости', news=news, users=users, form=form)
 
 
 @app.route('/delete_news/<int:news_id>')
@@ -419,6 +452,48 @@ def edit_news(news_id):
     form.content.data = news['content']
     form.is_private.data = news['is_private']
     return render_template('edit_news.html', title='Редактирование новости', form=form)
+
+
+@app.route('/get_news', methods=['GET', 'POST'])
+def update_news():
+    """Функция для обновления новостей в ленте."""
+    news = get_news()
+    res = {
+        'news': None
+    }
+    html = ''
+    for article in news[::-1]:
+        if not article.is_private:
+            html += """<div class="container-fluid shadow-sm rounded" 
+            style="background-color: #F0F0F0; padding-bottom: 10px;">\n"""
+            html += """<div class="row">
+                           <div class="col-10">
+                               <h3>{}</h3>
+                               <small>{}</small>
+                           </div>
+                       </div>
+
+                       <div class="row">
+                           <div class="col-12">
+                               <h5>{}</h5>
+                           </div>
+                       </div>\n""".format('{} {}'.format(article.user.name, article.user.surname),
+                                          str(article.created_date)[:16], article.content)
+            if article.user_id == current_user.id:
+                html += """<div class="row">
+                               <div class="col-5">
+                                   <a href="/edit_news/{{ article.id }}" class="btn btn-secondary">
+                                       Редактировать
+                                   </a>
+                                   <a href="/delete_news/{{ article.id }}" class="btn btn-danger">
+                                       Удалить
+                                   </a>
+                               </div>
+                           </div>\n""".format(article.id, article.id)
+            html += """</div>
+                       <br>\n"""
+    res['news'] = html
+    return jsonify(res)
 
 
 if __name__ == '__main__':
