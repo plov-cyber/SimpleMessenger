@@ -33,7 +33,7 @@ class NewsResource(Resource):
         abort_if_news_not_found(news_id)
         session = db_session.create_session()
         news = session.query(News).get(news_id)
-        return jsonify({'news': news.to_dict(only=['content', 'is_private', 'user_id'])})
+        return jsonify({'news': news.to_dict(only=['id', 'content', 'is_private', 'created_date', 'user_id'])})
 
     def delete(self, news_id):
         """Удалить новость"""
@@ -66,7 +66,8 @@ class NewsListResource(Resource):
 
         session = db_session.create_session()
         news = session.query(News).all()
-        return jsonify({'news': [item.to_dict(only=['content', 'is_private', 'user_id']) for item in news]})
+        return jsonify(
+            {'news': [item.to_dict(only=['id', 'content', 'is_private', 'created_date', 'user_id']) for item in news]})
 
     def post(self):
         """Добавить новую новость"""
