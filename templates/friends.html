@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid shadow-sm rounded" style="background-color: #F0F0F0;">
+    <div class="row">
+        <div class="col-6">
+            <h1>Друзья</h1>
+        </div>
+        <div class="col-3">
+            <a href="/friend_requests" class="btn btn-secondary">Заявки в друзья</a>
+        </div>
+        <div class="col-3">
+            <a href="/new_friend" class="btn btn-primary">Найти друзей</a>
+        </div>
+    </div>
+</div>
+<br>
+
+<div class="container-fluid shadow-sm rounded" style="background-color: #F0F0F0;">
+    {% for friend in friends %}
+    <div class="row">
+        <a class="col-12" href="/profile/{{ friend['id'] }}">
+            {{ friend['name'] }} {{ friend['surname'] }}
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

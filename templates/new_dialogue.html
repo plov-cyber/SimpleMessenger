@@ -31,7 +31,7 @@
                 Выберите собеседников
             </a>
 
-            <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuLink" style="overflow: auto; max-height: 200px;">
                 {% for subfield in form.members %}
                 <div class="dropdown-item">
                     {{ subfield }} {{ subfield.label }}

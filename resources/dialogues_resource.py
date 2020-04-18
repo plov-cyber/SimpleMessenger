@@ -9,7 +9,7 @@ from data.dialogues import Dialogue
 
 # Парсер аргументов
 parser = reqparse.RequestParser()
-parser.add_argument('name', required=True)
+parser.add_argument('name', type=str, required=True)
 parser.add_argument('members', required=True, action='append', type=int)
 
 

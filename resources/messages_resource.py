@@ -11,7 +11,7 @@ from data.messages import Message
 from data.users import User
 
 parser = reqparse.RequestParser()
-parser.add_argument('text', required=True)
+parser.add_argument('text', type=str, required=True)
 parser.add_argument('user_id', type=int, required=True)
 parser.add_argument('dialogue_id', type=int, required=True)
 

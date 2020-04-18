@@ -130,6 +130,7 @@ def register():
             'surname': form.surname.data,
             'age': form.age.data,
             'about': '',
+            'friends': '',
             'password': form.password.data
         }).json()
         if 'message' in res:
@@ -150,7 +151,9 @@ def login():
         user = session.query(User).filter(User.login == form.login.data).first()
         if user and user.check_password(form.password.data):
             login_user(user, remember=form.remember_me.data)
-            return redirect('/news')
+
+            next_url = request.args.get('next')
+            return redirect(next_url or '/news')
         return render_template('login.html', title='Авторизация',
                                message='Неправильный логин или пароль',
                                form=form)
@@ -167,8 +170,14 @@ def logout():
 
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
-def profile():
+def my_profile():
     """Страница профиля пользователя."""
+    user = requests.get('http://localhost:{}/api_users/{}'.format(PORT, current_user.id)).json()
+    if 'user' not in user:
+        abort(500)
+    news = []
+    for article in current_user.news:
+        pass
     form = NewsForm()
     if form.validate_on_submit():
         res = requests.post('http://localhost:{}/api_news'.format(PORT), json={
@@ -185,6 +194,14 @@ def profile():
                            news=current_user.news)
 
 
+@app.route('/profile/<int:user_id>')
+@login_required
+def user_profile():
+    """Страница профиля другого пользователя."""
+    return render_template()
+
+
+
 @app.route('/edit_profile', methods=['GET', 'POST'])
 @login_required
 def edit_profile():
@@ -198,6 +215,7 @@ def edit_profile():
                 'surname': form.surname.data,
                 'age': form.age.data,
                 'about': form.about.data if form.about.data else '',
+                'friends': current_user.friends,
                 'password': form.password.data
             }).json()
             if 'success' in res:
@@ -228,6 +246,7 @@ def settings():
                     'surname': current_user.surname,
                     'age': current_user.age,
                     'about': current_user.about,
+                    'friends': current_user.friends,
                     'password': form.new_password.data
                 }).json()
                 if 'success' in res:
@@ -254,7 +273,7 @@ def delete_profile(user_id):
 
 @app.route('/dialogues')
 @login_required
-def dialogues():
+def my_dialogues():
     """Страница пользователя с диалогами."""
     users = {}
     dialogues = get_dialogues()
@@ -361,6 +380,8 @@ def update_messages():
                                 </div>
                             </div>
                         </div>\n""".format(user.name, user.surname, str(message.send_date)[:16], message.text)
+        if message == messages[-1]:
+            html += """<div id="bottom"></div>\n"""
     res['messages'] = html
     return jsonify(res)
 
@@ -494,6 +515,19 @@ def update_news():
                        <br>\n"""
     res['news'] = html
     return jsonify(res)
+
+
+@app.route('/friends')
+def my_friends():
+    """Страница с друзьями пользователя."""
+    friends = []
+    if current_user.friends:
+        for user_id in list(map(int, current_user.friends.split(', '))):
+            friend = requests.get('http://localhost:{}/api_users/{}'.format(PORT, user_id)).json()
+            if 'user' not in friend:
+                abort(500)
+            friends.append(friend['friend'])
+    return render_template('friends.html', title='Друзья', friends=friends)
 
 
 if __name__ == '__main__':

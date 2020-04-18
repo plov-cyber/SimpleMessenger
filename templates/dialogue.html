@@ -10,6 +10,11 @@
         });
         return false;
     }, 2000);
+
+    window.onload = function()
+    {
+        document.getElementById('bottom').scrollIntoView(true);
+    }
 </script>
 {% endblock %}
 
@@ -55,6 +60,9 @@
             </div>
             {% endif %}
             {% endfor %}
+            {% if loop.index == dialogue_messages|length %}
+            <div id="bottom"></div>
+            {% endif %}
             {% endfor %}
         </div>
     </div>

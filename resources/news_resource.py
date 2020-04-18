@@ -10,7 +10,7 @@ from data.news import News
 from data.users import User
 
 parser = reqparse.RequestParser()
-parser.add_argument('content', required=True)
+parser.add_argument('content', type=str, required=True)
 parser.add_argument('is_private', type=bool, required=True)
 parser.add_argument('user_id', type=int, required=True)
 
