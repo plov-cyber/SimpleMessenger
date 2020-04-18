@@ -91,7 +91,10 @@ class DialoguesListResource(Resource):
                 else:
                     abort(404, message='Беседа уже существует')
             user = user[0]
-            dialogue.members += ', ' + str(user.id)
+            if dialogue.members:
+                dialogue.members += ', ' + str(user.id)
+            else:
+                dialogue.members = str(user.id)
             session.merge(dialogue)
             session.commit()
             return jsonify({'success': 'OK'})

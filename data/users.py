@@ -18,6 +18,7 @@ class User(SqlAlchemyBase, UserMixin, SerializerMixin):
     age = sqlalchemy.Column(sqlalchemy.Integer, nullable=False)
     about = sqlalchemy.Column(sqlalchemy.String, nullable=False)
     friends = sqlalchemy.Column(sqlalchemy.String, nullable=False)
+    friend_requests = sqlalchemy.Column(sqlalchemy.String, nullable=False)
     hashed_password = sqlalchemy.Column(sqlalchemy.String, nullable=False)
     dialogues = orm.relation('Dialogue', secondary='user_to_dialogue', backref='users')
     messages = orm.relation('Message', back_populates='user')

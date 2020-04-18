@@ -75,6 +75,16 @@ def get_news():
     return news
 
 
+@login_required
+def get_user(user_id):
+    """Функция для получения пользователя."""
+    session = db_session.create_session()
+    user = session.query(User).get(user_id)
+    if not user:
+        abort(500)
+    return user
+
+
 def main():
     """Главная функция. Устанавливает соединение с базой данных.
     Подсоединяет ресурсы. Запускает приложение."""
@@ -131,6 +141,7 @@ def register():
             'age': form.age.data,
             'about': '',
             'friends': '',
+            'friend_requests': '',
             'password': form.password.data
         }).json()
         if 'message' in res:
@@ -168,16 +179,10 @@ def logout():
     return redirect('/login')
 
 
-@app.route('/profile', methods=['GET', 'POST'])
+@app.route('/my_profile', methods=['GET', 'POST'])
 @login_required
 def my_profile():
     """Страница профиля пользователя."""
-    user = requests.get('http://localhost:{}/api_users/{}'.format(PORT, current_user.id)).json()
-    if 'user' not in user:
-        abort(500)
-    news = []
-    for article in current_user.news:
-        pass
     form = NewsForm()
     if form.validate_on_submit():
         res = requests.post('http://localhost:{}/api_news'.format(PORT), json={
@@ -186,20 +191,34 @@ def my_profile():
             'user_id': current_user.id
         }).json()
         if 'message' in res:
-            return render_template('profile.html', title='{} {}'.format(current_user.name, current_user.surname),
-                                   form=form,
+            return render_template('my_profile.html', form=form,
+                                   title='{} {}'.format(current_user.name, current_user.surname),
                                    message=res['message'], news=current_user.news)
         return redirect('/profile')
-    return render_template('profile.html', title='{} {}'.format(current_user.name, current_user.surname), form=form,
-                           news=current_user.news)
+    return render_template('my_profile.html', title='{} {}'.format(current_user.name, current_user.surname),
+                           form=form, news=current_user.news)
 
 
 @app.route('/profile/<int:user_id>')
 @login_required
-def user_profile():
+def user_profile(user_id):
     """Страница профиля другого пользователя."""
-    return render_template()
-
+    if user_id == current_user.id:
+        return redirect('/my_profile')
+    user = get_user(user_id)
+    news = []
+    for article in user.news:
+        art = requests.get('http://localhost:{}/api_news/{}'.format(PORT, article.id)).json()
+        if 'news' not in art:
+            abort(500)
+        news.append(art['news'])
+    current_user_friends = list(map(int, current_user.friends.split(', '))) if current_user.friends else []
+    current_user_friend_requests = list(
+        map(int, current_user.friend_requests.split(', '))) if current_user.friend_requests else []
+    user_friend_requests = list(map(int, user.friend_requests.split(', '))) if user.friend_requests else []
+    return render_template('profile.html', title='{} {}'.format(user.name, user.surname), news=news,
+                           user=user, current_user_friend_requests=current_user_friend_requests,
+                           current_user_friends=current_user_friends, user_friend_requests=user_friend_requests)
 
 
 @app.route('/edit_profile', methods=['GET', 'POST'])
@@ -216,6 +235,7 @@ def edit_profile():
                 'age': form.age.data,
                 'about': form.about.data if form.about.data else '',
                 'friends': current_user.friends,
+                'friend_requests': current_user.friend_requests,
                 'password': form.password.data
             }).json()
             if 'success' in res:
@@ -289,7 +309,8 @@ def new_dialogue():
     form = DialogueForm()
     users = requests.get('http://localhost:{}/api_users'.format(PORT)).json()['users']
     form.members.choices = [(user['id'], '{} {}'.format(user['name'], user['surname'])) for user
-                            in users if user['login'] != current_user.login]
+                            in users if user['login'] != current_user.login and
+                            str(user['id']) in current_user.friends.split(', ')]
     users = {}
     dialogues = get_dialogues()
     for dialogue in dialogues:
@@ -518,6 +539,7 @@ def update_news():
 
 
 @app.route('/friends')
+@login_required
 def my_friends():
     """Страница с друзьями пользователя."""
     friends = []
@@ -526,8 +548,81 @@ def my_friends():
             friend = requests.get('http://localhost:{}/api_users/{}'.format(PORT, user_id)).json()
             if 'user' not in friend:
                 abort(500)
-            friends.append(friend['friend'])
+            friends.append(friend['user'])
     return render_template('friends.html', title='Друзья', friends=friends)
+
+
+@app.route('/add_request/<int:user_id>')
+@login_required
+def add_request(user_id):
+    """Функция для добавления заявки в друзья."""
+    session = db_session.create_session()
+    user = session.query(User).get(current_user.id)
+    if user.friend_requests:
+        user.friend_requests += ', ' + str(user_id)
+    else:
+        user.friend_requests = str(user_id)
+    session.merge(user)
+    session.commit()
+    return redirect('/profile/{}'.format(user_id))
+
+
+@app.route('/delete_request/<int:user_id>/<int:type>')
+@login_required
+def delete_request(user_id, type):
+    """Функция для удаления заявки в друзья."""
+    session = db_session.create_session()
+    user = None
+    if type == 1:
+        user = session.query(User).get(current_user.id)
+        user.friend_requests = ', '.join([i for i in user.friend_requests.split(', ') if i != str(user_id)])
+    elif type == 2:
+        user = session.query(User).get(user_id)
+        user.friend_requests = ', '.join([i for i in user.friend_requests.split(', ') if i != str(current_user.id)])
+    else:
+        abort(500)
+    session.merge(user)
+    session.commit()
+    return redirect('/profile/{}'.format(user_id))
+
+
+@app.route('/add_friend/<int:user_id>')
+@login_required
+def add_friend(user_id):
+    """Функция для добавления пользователя в друзья."""
+    delete_request(user_id, 2)
+    session = db_session.create_session()
+    user = session.query(User).get(current_user.id)
+    if user.friends:
+        user.friends += ', ' + str(user_id)
+    else:
+        user.friends = str(user_id)
+    session.merge(user)
+    session.commit()
+    user = session.query(User).get(user_id)
+    if user.friends:
+        user.friends += ', ' + str(current_user.id)
+    else:
+        user.friends = str(current_user.id)
+    session.merge(user)
+    session.commit()
+    return redirect(request.referrer)
+
+
+@app.route('/delete_friend/<int:user_id>')
+@login_required
+def delete_friend(user_id):
+    """Функция для удаления пользователя из друзей."""
+    session = db_session.create_session()
+    user = session.query(User).get(current_user.id)
+    user.friends = ', '.join([i for i in user.friends.split(', ') if i != str(user_id)])
+    session.merge(user)
+    session.commit()
+    user = session.query(User).get(user_id)
+    user.friends = ', '.join([i for i in user.friends.split(', ') if i != str(current_user.id)])
+    session.merge(user)
+    session.commit()
+    return redirect('/profile/{}'.format(user_id))
 
 
 if __name__ == '__main__':

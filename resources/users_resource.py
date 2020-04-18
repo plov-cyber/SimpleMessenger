@@ -14,6 +14,7 @@ parser.add_argument('surname', type=str, required=True)
 parser.add_argument('age', type=int, required=True)
 parser.add_argument('about', type=str, required=True)
 parser.add_argument('friends', type=str, required=True)
+parser.add_argument('friend_requests', type=str, required=True)
 parser.add_argument('password', type=str, required=True)
 
 
@@ -51,7 +52,7 @@ class UsersResource(Resource):
         session = db_session.create_session()
         user = session.query(User).get(user_id)
         return jsonify({'user': user.to_dict(
-            only=['id', 'login', 'name', 'surname', 'age', 'about', 'friends'])})
+            only=['id', 'login', 'name', 'surname', 'age', 'about', 'friends', 'friend_requests'])})
 
     def delete(self, user_id):
         """Удалить пользователя"""
@@ -72,6 +73,14 @@ class UsersResource(Resource):
                 friend.friends = ', '.join([i for i in friend.friends.split(', ') if i != str(user.id)])
                 session.merge(friend)
                 session.commit()
+        if user.friend_requests:
+            users = session.query(User).all()
+            for person in users:
+                if user.id in [int(i) for i in person.friend_requests.split(', ')]:
+                    person.friend_requests = ', '.join(
+                        [i for i in person.friend_requests.split(', ') if i != str(user.id)])
+                    session.merge(person)
+                    session.commit()
         session.delete(user)
         session.commit()
         return jsonify({'success': 'OK'})
@@ -89,6 +98,7 @@ class UsersResource(Resource):
         user.age = args['age']
         user.about = args['about']
         user.friends = args['friends']
+        user.friend_requests = args['friend_requests']
         user.set_password(args['password'])
         session.commit()
         return jsonify({'success': 'OK'})
@@ -104,7 +114,7 @@ class UsersListResource(Resource):
         users = session.query(User).all()
         return jsonify({'users': [
             item.to_dict(
-                only=['id', 'login', 'name', 'surname', 'age', 'about', 'friends']) for
+                only=['id', 'login', 'name', 'surname', 'age', 'about', 'friends', 'friend_requests']) for
             item in users]})
 
     def post(self):
@@ -121,7 +131,8 @@ class UsersListResource(Resource):
             surname=args['surname'],
             age=args['age'],
             about=args['about'],
-            friends=args['friends']
+            friends=args['friends'],
+            friend_requests=args['friend_requests']
         )
         user.set_password(args['password'])
         session.add(user)
