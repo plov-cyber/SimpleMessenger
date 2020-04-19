@@ -69,7 +69,8 @@ class UsersResource(Resource):
             session.commit()
         for dialogue in user.dialogues:
             d = session.query(Dialogue).get(dialogue.id)
-            d.members = ', '.join([i for i in d.members.split(', ') if i != str(user.id)])
+            if d.members:
+                d.members = ', '.join([i for i in d.members.split(', ') if i != str(user.id)])
             if not d.members:
                 session.delete(d)
             else:
@@ -79,17 +80,19 @@ class UsersResource(Resource):
             for user_id in list(map(int, user.friends.split(', '))):
                 abort_if_user_not_found(user_id)
                 friend = session.query(User).get(user_id)
-                friend.friends = ', '.join([i for i in friend.friends.split(', ') if i != str(user.id)])
+                if friend.friends:
+                    friend.friends = ', '.join([i for i in friend.friends.split(', ') if i != str(user.id)])
                 session.merge(friend)
                 session.commit()
         if user.friend_requests:
             users = session.query(User).all()
             for person in users:
-                if user.id in [int(i) for i in person.friend_requests.split(', ')]:
-                    person.friend_requests = ', '.join(
-                        [i for i in person.friend_requests.split(', ') if i != str(user.id)])
-                    session.merge(person)
-                    session.commit()
+                if person.friend_requests:
+                    if user.id in [int(i) for i in person.friend_requests.split(', ')]:
+                        person.friend_requests = ', '.join(
+                            [i for i in person.friend_requests.split(', ') if i != str(user.id)])
+                        session.merge(person)
+                        session.commit()
         session.delete(user)
         session.commit()
         return jsonify({'success': 'OK'})

@@ -89,10 +89,10 @@
         {% if article['user_id'] == current_user.id %}
         <div class="row">
             <div class="col-5">
-                <a href="/edit_news/{{ article.id }}" class="btn btn-secondary">
+                <a href="/edit_news/{{ article['id'] }}" class="btn btn-secondary">
                     Редактировать
                 </a>
-                <a href="/delete_news/{{ article.id }}" class="btn btn-danger">
+                <a href="/delete_news/{{ article['id'] }}" class="btn btn-danger">
                     Удалить
                 </a>
             </div>

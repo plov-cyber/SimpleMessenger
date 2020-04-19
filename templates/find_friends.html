@@ -22,7 +22,7 @@
                 Заявка отправлена
             </button>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton2">
-                <a class="dropdown-item" href="/delete_request/{{ user.id }}/1">Отменить заявку</a>
+                <a class="dropdown-item" href="/delete_request/{{ stranger['id'] }}/1">Отменить заявку</a>
             </div>
         </div>
         {% else %}
@@ -31,8 +31,7 @@
         </div>
         {% endif %}
     </div>
-</div>
-<br>
-{% endfor %}
+    <br>
+    {% endfor %}
 </div>
 {% endblock %}

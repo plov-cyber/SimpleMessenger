@@ -195,7 +195,7 @@ def my_profile():
             return render_template('my_profile.html', form=form,
                                    title='{} {}'.format(current_user.name, current_user.surname),
                                    message=res['message'], news=current_user.news)
-        return redirect('/profile')
+        return redirect('/my_profile')
     return render_template('my_profile.html', title='{} {}'.format(current_user.name, current_user.surname),
                            form=form, news=current_user.news)
 
@@ -573,7 +573,7 @@ def add_request(user_id):
         user.friend_requests = str(user_id)
     session.merge(user)
     session.commit()
-    return redirect('/profile/{}'.format(user_id))
+    return redirect(request.referrer)
 
 
 @app.route('/delete_request/<int:user_id>/<int:type>')
@@ -592,7 +592,7 @@ def delete_request(user_id, type):
         abort(500)
     session.merge(user)
     session.commit()
-    return redirect('/profile/{}'.format(user_id))
+    return redirect(request.referrer)
 
 
 @app.route('/add_friend/<int:user_id>')
@@ -631,7 +631,7 @@ def delete_friend(user_id):
     user.friends = ', '.join([i for i in user.friends.split(', ') if i != str(current_user.id)])
     session.merge(user)
     session.commit()
-    return redirect('/profile/{}'.format(user_id))
+    return redirect(request.referrer)
 
 
 @app.route('/friend_requests')
