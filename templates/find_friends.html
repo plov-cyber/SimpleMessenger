@@ -15,18 +15,7 @@
             <h3>{{ stranger['name'] }} {{ stranger['surname'] }}</h3>
         </a>
 
-        {% if current_user.id in user_friend_requests %}
-        <div class="col-3 dropdown">
-            <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton"
-                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                Действия
-            </button>
-            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                <a class="dropdown-item" href="/add_friend/{{ stranger['id'] }}">Принять заявку</a>
-                <a class="dropdown-item" href="/delete_request/{{ stranger['id'] }}/2">Отклонить заявку</a>
-            </div>
-        </div>
-        {% elif stranger['id'] in current_user_friend_requests %}
+        {% if stranger['id'] in current_user_friend_requests %}
         <div class="col-3 dropdown">
             <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton2"
                     data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">

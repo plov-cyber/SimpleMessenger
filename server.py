@@ -664,10 +664,8 @@ def find_friends():
         strangers = users
     current_user_friend_requests = list(
         map(int, current_user.friend_requests.split(', '))) if current_user.friend_requests else []
-    user_friend_requests = list(map(int, user.friend_requests.split(', '))) if user.friend_requests else []
     return render_template('find_friends.html', strangers=strangers, title='Найти друзей',
-                           current_user_friend_requests=current_user_friend_requests,
-                           user_friend_requests=user_friend_requests)
+                           current_user_friend_requests=current_user_friend_requests)
 
 
 if __name__ == '__main__':
