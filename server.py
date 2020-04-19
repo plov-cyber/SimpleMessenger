@@ -48,7 +48,8 @@ def get_dialogues():
     """Функция для получения диалогов пользователя."""
     session = db_session.create_session()
     user = session.query(User).get(current_user.id)
-    return [dialogue for dialogue in user.dialogues if str(user.id) in dialogue.members.split(', ')]
+    return [dialogue for dialogue in user.dialogues if
+            str(user.id) in dialogue.members.split(', ')]
 
 
 @login_required
@@ -296,7 +297,15 @@ def delete_profile(user_id):
 def my_dialogues():
     """Страница пользователя с диалогами."""
     users = {}
-    dialogues = get_dialogues()
+    all_dialogues = get_dialogues()
+    dialogues = []
+    for dialogue in all_dialogues:
+        if len(dialogue.members.split(', ')) == 2:
+            user_id = [i for i in dialogue.members.split(', ') if i != str(current_user.id)][0]
+            if user_id in current_user.friends.split(', '):
+                dialogues.append(dialogue)
+        else:
+            dialogues.append(dialogue)
     for dialogue in dialogues:
         users[dialogue.id] = get_users(dialogue.id)
     return render_template('dialogues.html', title='Диалоги', dialogues=dialogues, users=users)
@@ -623,6 +632,42 @@ def delete_friend(user_id):
     session.merge(user)
     session.commit()
     return redirect('/profile/{}'.format(user_id))
+
+
+@app.route('/friend_requests')
+@login_required
+def friend_requests():
+    users = requests.get('http://localhost:{}/api_users'.format(PORT)).json()
+    if 'users' not in users:
+        abort(500)
+    users = [user for user in users['users'] if user['id'] != current_user.id]
+    followers = []
+    for user in users:
+        if user['friend_requests'] and current_user.id in list(map(int, user['friend_requests'].split(', '))):
+            followers.append(user)
+    return render_template('friend_requests.html', title='Заявки в друзья', followers=followers)
+
+
+@app.route('/find_friends')
+@login_required
+def find_friends():
+    users = requests.get('http://localhost:{}/api_users'.format(PORT)).json()
+    if 'users' not in users:
+        abort(500)
+    users = [user for user in users['users'] if user['id'] != current_user.id]
+    strangers = []
+    if current_user.friends:
+        for user in users:
+            if user['id'] not in list(map(int, current_user.friends.split(', '))):
+                strangers.append(user)
+    else:
+        strangers = users
+    current_user_friend_requests = list(
+        map(int, current_user.friend_requests.split(', '))) if current_user.friend_requests else []
+    user_friend_requests = list(map(int, user.friend_requests.split(', '))) if user.friend_requests else []
+    return render_template('find_friends.html', strangers=strangers, title='Найти друзей',
+                           current_user_friend_requests=current_user_friend_requests,
+                           user_friend_requests=user_friend_requests)
 
 
 if __name__ == '__main__':

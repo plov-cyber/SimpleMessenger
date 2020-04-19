@@ -10,7 +10,7 @@
             <a href="/friend_requests" class="btn btn-secondary">Заявки в друзья</a>
         </div>
         <div class="col-3" style="margin: auto auto;">
-            <a href="/new_friend" class="btn btn-primary">Найти друзей</a>
+            <a href="/find_friends" class="btn btn-primary">Найти друзей</a>
         </div>
     </div>
 </div>
@@ -18,7 +18,7 @@
 
 <div class="container-fluid shadow-sm rounded" style="background-color: #F0F0F0;">
     {% for friend in friends %}
-    <div class="row">
+    <div class="row shadow-sm rounded">
         <a class="col-12" href="/profile/{{ friend['id'] }}" style="text-decoration: none;">
             <h4>{{ friend['name'] }} {{ friend['surname'] }}</h4>
         </a>

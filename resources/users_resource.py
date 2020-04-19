@@ -3,6 +3,7 @@
 from flask import jsonify
 from flask_restful import Resource, abort
 from data import db_session
+from data.dialogues import Dialogue
 from data.users import User
 from flask_restful import reqparse
 
@@ -65,6 +66,14 @@ class UsersResource(Resource):
             session.commit()
         for message in user.messages:
             session.delete(message)
+            session.commit()
+        for dialogue in user.dialogues:
+            d = session.query(Dialogue).get(dialogue.id)
+            d.members = ', '.join([i for i in d.members.split(', ') if i != str(user.id)])
+            if not d.members:
+                session.delete(d)
+            else:
+                session.merge(d)
             session.commit()
         if user.friends:
             for user_id in list(map(int, user.friends.split(', '))):
