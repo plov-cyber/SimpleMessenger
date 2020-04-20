@@ -443,18 +443,22 @@ def delete_dialogue(dialogue_id):
 @app.route('/news', methods=['GET', 'POST'])
 @login_required
 def all_news():
-    """Страница с новостями других пользователей."""
+    """Страница с новостями друзей."""
     news = requests.get('http://localhost:{}/api_news'.format(PORT)).json()
     if 'news' not in news:
         abort(500)
-    news = news['news']
+    api_news = news['news']
+    news = []
     users = {}
-    for article in news:
-        user = requests.get('http://localhost:{}/api_users/{}'.format(PORT, article['user_id'])).json()
-        if 'user' not in user:
-            abort(500)
-        user = user['user']
-        users[article['id']] = '{} {}'.format(user['name'], user['surname'])
+    if current_user.friends:
+        for article in api_news:
+            user = requests.get('http://localhost:{}/api_users/{}'.format(PORT, article['user_id'])).json()
+            if 'user' not in user:
+                abort(500)
+            user = user['user']
+            if user['id'] in list(map(int, current_user.friends.split(', '))):
+                news.append(article)
+                users[article['id']] = '{} {}'.format(user['name'], user['surname'])
     form = NewsForm()
     if form.validate_on_submit():
         res = requests.post('http://localhost:{}/api_news'.format(PORT), json={
@@ -513,36 +517,37 @@ def update_news():
         'news': None
     }
     html = ''
-    for article in news[::-1]:
-        if not article.is_private:
-            html += """<div class="container-fluid shadow-sm rounded" 
-            style="background-color: #F0F0F0; padding-bottom: 10px;">\n"""
-            html += """<div class="row">
-                           <div class="col-10">
-                               <h3>{}</h3>
-                               <small>{}</small>
-                           </div>
-                       </div>
-
-                       <div class="row">
-                           <div class="col-12">
-                               <h5>{}</h5>
-                           </div>
-                       </div>\n""".format('{} {}'.format(article.user.name, article.user.surname),
-                                          str(article.created_date)[:16], article.content)
-            if article.user_id == current_user.id:
+    if current_user.friends:
+        for article in news[::-1]:
+            if not article.is_private and article.user_id in list(map(int, current_user.friends.split(', '))):
+                html += """<div class="container-fluid shadow-sm rounded" 
+                style="background-color: #F0F0F0; padding-bottom: 10px;">\n"""
                 html += """<div class="row">
-                               <div class="col-5">
-                                   <a href="/edit_news/{{ article.id }}" class="btn btn-secondary">
-                                       Редактировать
-                                   </a>
-                                   <a href="/delete_news/{{ article.id }}" class="btn btn-danger">
-                                       Удалить
-                                   </a>
+                               <div class="col-10">
+                                   <h3>{}</h3>
+                                   <small>{}</small>
                                </div>
-                           </div>\n""".format(article.id, article.id)
-            html += """</div>
-                       <br>\n"""
+                           </div>
+    
+                           <div class="row">
+                               <div class="col-12">
+                                   <h5>{}</h5>
+                               </div>
+                           </div>\n""".format('{} {}'.format(article.user.name, article.user.surname),
+                                              str(article.created_date)[:16], article.content)
+                if article.user_id == current_user.id:
+                    html += """<div class="row">
+                                   <div class="col-5">
+                                       <a href="/edit_news/{{ article.id }}" class="btn btn-secondary">
+                                           Редактировать
+                                       </a>
+                                       <a href="/delete_news/{{ article.id }}" class="btn btn-danger">
+                                           Удалить
+                                       </a>
+                                   </div>
+                               </div>\n""".format(article.id, article.id)
+                html += """</div>
+                           <br>\n"""
     res['news'] = html
     return jsonify(res)
 
