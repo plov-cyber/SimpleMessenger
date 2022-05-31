@@ -28,12 +28,12 @@ from resources.messages_resource import MessagesResource, MessagesListResource
 
 # Создание приложения, API и менеджера авторизации
 app = Flask(__name__)
-# run_with_ngrok(app)
+run_with_ngrok(app)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 api = Api(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
-PORT = None
+PORT = 5000
 
 
 @login_manager.user_loader
@@ -90,7 +90,8 @@ def main():
     """Главная функция. Устанавливает соединение с базой данных.
     Подсоединяет ресурсы. Запускает приложение."""
     global PORT
-    db_session.global_init('db/data.sqlite')
+    db_session.global_init(
+        'C:\\Users\\rekhl\\PycharmProjects\\SimpleMessenger\\db\\data.sqlite')
 
     api.add_resource(UsersResource, '/api_users/<int:user_id>')
     api.add_resource(UsersListResource, '/api_users')
@@ -103,7 +104,7 @@ def main():
 
     PORT = int(os.environ.get("PORT", 80))
     # '0.0.0.0', port=PORT
-    app.run('0.0.0.0', port=PORT)
+    app.run()
 
 
 @app.errorhandler(404)
@@ -160,7 +161,8 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         session = db_session.create_session()
-        user = session.query(User).filter(User.login == form.login.data).first()
+        user = session.query(User).filter(
+            User.login == form.login.data).first()
         if user and user.check_password(form.password.data):
             login_user(user, remember=form.remember_me.data)
 
@@ -193,7 +195,8 @@ def my_profile():
         }).json()
         if 'message' in res:
             return render_template('my_profile.html', form=form,
-                                   title='{} {}'.format(current_user.name, current_user.surname),
+                                   title='{} {}'.format(
+                                       current_user.name, current_user.surname),
                                    message=res['message'], news=current_user.news)
         return redirect('/my_profile')
     return render_template('my_profile.html', title='{} {}'.format(current_user.name, current_user.surname),
@@ -209,14 +212,17 @@ def user_profile(user_id):
     user = get_user(user_id)
     news = []
     for article in user.news:
-        art = requests.get('http://localhost:{}/api_news/{}'.format(PORT, article.id)).json()
+        art = requests.get(
+            'http://localhost:{}/api_news/{}'.format(PORT, article.id)).json()
         if 'news' not in art:
             abort(500)
         news.append(art['news'])
-    current_user_friends = list(map(int, current_user.friends.split(', '))) if current_user.friends else []
+    current_user_friends = list(
+        map(int, current_user.friends.split(', '))) if current_user.friends else []
     current_user_friend_requests = list(
         map(int, current_user.friend_requests.split(', '))) if current_user.friend_requests else []
-    user_friend_requests = list(map(int, user.friend_requests.split(', '))) if user.friend_requests else []
+    user_friend_requests = list(
+        map(int, user.friend_requests.split(', '))) if user.friend_requests else []
     return render_template('profile.html', title='{} {}'.format(user.name, user.surname), news=news,
                            user=user, current_user_friend_requests=current_user_friend_requests,
                            current_user_friends=current_user_friends, user_friend_requests=user_friend_requests)
@@ -286,7 +292,8 @@ def settings():
 @login_required
 def delete_profile(user_id):
     """Функция для удаления профиля пользователя."""
-    res = requests.delete('http://localhost:{}/api_users/{}'.format(PORT, user_id)).json()
+    res = requests.delete(
+        'http://localhost:{}/api_users/{}'.format(PORT, user_id)).json()
     if 'success' in res:
         return redirect('/logout')
     abort(500)
@@ -301,7 +308,8 @@ def my_dialogues():
     dialogues = []
     for dialogue in all_dialogues:
         if len(dialogue.members.split(', ')) == 2:
-            user_id = [i for i in dialogue.members.split(', ') if i != str(current_user.id)][0]
+            user_id = [i for i in dialogue.members.split(
+                ', ') if i != str(current_user.id)][0]
             if user_id in current_user.friends.split(', '):
                 dialogues.append(dialogue)
         else:
@@ -316,7 +324,8 @@ def my_dialogues():
 def new_dialogue():
     """Страница для создания нового диалога."""
     form = DialogueForm()
-    users = requests.get('http://localhost:{}/api_users'.format(PORT)).json()['users']
+    users = requests.get(
+        'http://localhost:{}/api_users'.format(PORT)).json()['users']
     form.members.choices = [(user['id'], '{} {}'.format(user['name'], user['surname'])) for user
                             in users if user['login'] != current_user.login and
                             str(user['id']) in current_user.friends.split(', ')]
@@ -426,9 +435,10 @@ def delete_dialogue(dialogue_id):
         if dialogue.id == dialogue_id:
             true_dialogue = session.query(Dialogue).get(dialogue_id)
             true_dialogue.members = ', '.join([member for member in
-                                               true_dialogue.members.split(', ')
+                                               true_dialogue.members.split(
+                                                   ', ')
                                                if int(member) != user.id])
-            if true_dialogue.members == '':
+            if true_dialogue.members == '' or true_dialogue.members.count(',') == 0:
                 for message in true_dialogue.messages:
                     session.delete(message)
                 session.delete(dialogue)
@@ -451,14 +461,16 @@ def all_news():
     news = []
     users = {}
     for article in api_news:
-        user = requests.get('http://localhost:{}/api_users/{}'.format(PORT, article['user_id'])).json()
+        user = requests.get(
+            'http://localhost:{}/api_users/{}'.format(PORT, article['user_id'])).json()
         if 'user' not in user:
             abort(500)
         user = user['user']
         if (current_user.friends and user['id'] in list(map(int, current_user.friends.split(', ')))) \
                 or user['id'] == current_user.id:
             news.append(article)
-            users[article['id']] = '{} {}'.format(user['name'], user['surname'])
+            users[article['id']] = '{} {}'.format(
+                user['name'], user['surname'])
     form = NewsForm()
     if form.validate_on_submit():
         res = requests.post('http://localhost:{}/api_news'.format(PORT), json={
@@ -478,7 +490,8 @@ def all_news():
 @login_required
 def delete_news(news_id):
     """Функция для удаления новости пользователя."""
-    res = requests.delete('http://localhost:{}/api_news/{}'.format(PORT, news_id)).json()
+    res = requests.delete(
+        'http://localhost:{}/api_news/{}'.format(PORT, news_id)).json()
     if 'success' in res:
         return redirect(request.referrer)
     abort(500)
@@ -489,7 +502,8 @@ def delete_news(news_id):
 def edit_news(news_id):
     """Страница для редактирования новости пользователя."""
     form = NewsForm()
-    news = requests.get('http://localhost:{}/api_news/{}'.format(PORT, news_id)).json()
+    news = requests.get(
+        'http://localhost:{}/api_news/{}'.format(PORT, news_id)).json()
     if 'news' not in news:
         abort(500)
     news = news['news']
@@ -559,7 +573,8 @@ def my_friends():
     friends = []
     if current_user.friends:
         for user_id in list(map(int, current_user.friends.split(', '))):
-            friend = requests.get('http://localhost:{}/api_users/{}'.format(PORT, user_id)).json()
+            friend = requests.get(
+                'http://localhost:{}/api_users/{}'.format(PORT, user_id)).json()
             if 'user' not in friend:
                 abort(500)
             friends.append(friend['user'])
@@ -589,10 +604,12 @@ def delete_request(user_id, type):
     user = None
     if type == 1:
         user = session.query(User).get(current_user.id)
-        user.friend_requests = ', '.join([i for i in user.friend_requests.split(', ') if i != str(user_id)])
+        user.friend_requests = ', '.join(
+            [i for i in user.friend_requests.split(', ') if i != str(user_id)])
     elif type == 2:
         user = session.query(User).get(user_id)
-        user.friend_requests = ', '.join([i for i in user.friend_requests.split(', ') if i != str(current_user.id)])
+        user.friend_requests = ', '.join(
+            [i for i in user.friend_requests.split(', ') if i != str(current_user.id)])
     else:
         abort(500)
     session.merge(user)
@@ -629,11 +646,13 @@ def delete_friend(user_id):
     """Функция для удаления пользователя из друзей."""
     session = db_session.create_session()
     user = session.query(User).get(current_user.id)
-    user.friends = ', '.join([i for i in user.friends.split(', ') if i != str(user_id)])
+    user.friends = ', '.join(
+        [i for i in user.friends.split(', ') if i != str(user_id)])
     session.merge(user)
     session.commit()
     user = session.query(User).get(user_id)
-    user.friends = ', '.join([i for i in user.friends.split(', ') if i != str(current_user.id)])
+    user.friends = ', '.join(
+        [i for i in user.friends.split(', ') if i != str(current_user.id)])
     session.merge(user)
     session.commit()
     return redirect(request.referrer)
